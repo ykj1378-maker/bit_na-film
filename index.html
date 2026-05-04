@@ -88,11 +88,11 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 /* MENU */
 .menu-bar{background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;height:36px;gap:2px;position:relative;z-index:200;flex-shrink:0;}
 .menu-item{position:relative;}
-.menu-item>button{background:none;border:none;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);border-radius:5px;font-weight:500;transition:.15s;}
+.menu-item>button{background:none;border:none;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);border-radius:5px;font-weight:500;transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.1);}
 .menu-item>button:hover,.menu-item.open>button{background:var(--bg);color:var(--primary);}
 .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid var(--border);border-radius:8px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:300;padding:4px 0;}
 .menu-item.open .dropdown{display:block;}
-.dropdown button{display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);transition:.15s;}
+.dropdown button{display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.1);}
 .dropdown button:hover{background:var(--bg);color:var(--primary);}
 
 /* TOOLBAR */
@@ -501,7 +501,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
-      <button onclick="toggleMenu('mf')" ontouchstart="toggleMenu('mf')">파일</button>
+      <button onclick="toggleMenu('mf')">파일</button>
       <div class="dropdown">
         <button onclick="mAction('open')">열기</button>
         <button onclick="mAction('save')">저장</button>
@@ -509,7 +509,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       </div>
     </div>
     <div class="menu-item" id="mv">
-      <button onclick="toggleMenu('mv')" ontouchstart="toggleMenu('mv')">보기</button>
+      <button onclick="toggleMenu('mv')">보기</button>
       <div class="dropdown">
         <button onclick="openDateView()">날짜</button>
         <button onclick="openStats()">통계</button>
@@ -518,7 +518,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       </div>
     </div>
     <div class="menu-item" id="ms">
-      <button onclick="toggleMenu('ms')" ontouchstart="toggleMenu('ms')">설정</button>
+      <button onclick="toggleMenu('ms')">설정</button>
       <div class="dropdown">
         <button onclick="openWorkerMgr()">작업자관리</button>
         <button onclick="openAccMgmt()">계정 관리</button>
@@ -1697,16 +1697,42 @@ function schedSave(){
 }
 
 // ============ MENU ============
+// ============ MENU ============
+// 모바일에서 touchstart→click 이중 발화 방지
+var _menuTouchHandled = false;
+
 function toggleMenu(id){
-  document.querySelectorAll('.menu-item').forEach(m=>{ if(m.id!==id) m.classList.remove('open'); });
-  document.getElementById(id).classList.toggle('open');
+  // 터치 이벤트 후 click 이중 발화 방지
+  if(_menuTouchHandled){ _menuTouchHandled = false; return; }
+  var items = document.querySelectorAll('.menu-item');
+  var target = document.getElementById(id);
+  var wasOpen = target.classList.contains('open');
+  items.forEach(function(m){ m.classList.remove('open'); });
+  if(!wasOpen) target.classList.add('open');
 }
-// 모바일(터치) + 데스크탑(클릭) 모두 메뉴 닫기 처리
-function _closeMenuOutside(e){
-  if(!e.target.closest('.menu-item')) document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));
-}
-document.addEventListener('click', _closeMenuOutside);
-document.addEventListener('touchstart', _closeMenuOutside, {passive:true});
+
+// 메뉴 버튼에 터치 이벤트 직접 바인딩 (이중발화 방지 포함)
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.menu-item > button').forEach(function(btn){
+    btn.addEventListener('touchend', function(e){
+      e.preventDefault(); // click 이벤트 억제
+      var id = btn.closest('.menu-item').id;
+      var items = document.querySelectorAll('.menu-item');
+      var target = document.getElementById(id);
+      var wasOpen = target.classList.contains('open');
+      items.forEach(function(m){ m.classList.remove('open'); });
+      if(!wasOpen) target.classList.add('open');
+    }, {passive: false});
+  });
+});
+
+// 외부 클릭/터치 시 메뉴 닫기
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.menu-item')) document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+});
+document.addEventListener('touchstart', function(e){
+  if(!e.target.closest('.menu-item')) document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+}, {passive: true});
 
 function mAction(a){
   document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));
