@@ -528,16 +528,14 @@ window._fbReady=true;
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
       <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
         <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
       </div>
-      <button id="btnSelectDate" class="tb-btn blue"
-        style="display:none;padding:8px 14px;font-size:12px;"
-        onclick="confirmDateSelect()">선택</button>
-      <button id="btnCloseDate" class="tb-btn"
-        style="display:none;padding:8px 14px;font-size:12px;background:#E53E3E;color:#fff;"
-        onclick="backToRealToday()">닫기</button>
+      <button id="btnDateSelect" onclick="confirmDateSelect()"
+        style="display:none;background:#1B3A6B;color:#fff;border:none;border-radius:8px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">선택</button>
+      <button id="btnDateClose" onclick="backToRealToday()"
+        style="display:none;background:#E53E3E;color:#fff;border:none;border-radius:8px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">닫기</button>
     </div>
     <button class="tb-btn gold" onclick="openCalc()">계산기</button>
     <div class="search-wrap" id="searchWrap">
@@ -2327,10 +2325,9 @@ function renderAccList(){
   });
 }
 function syncAccounts(){
-  // localStorage에 즉시 저장 (PWA/브라우저 모두)
   try{
-    const snap = Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
-    localStorage.setItem('bn_db2', JSON.stringify(snap));
+    const snap=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
+    localStorage.setItem('bn_db2',JSON.stringify(snap));
   }catch(e){}
   if(window.pywebview && window.pywebview.api){
     window.pywebview.api.save_accounts(JSON.stringify(DB.accounts)).catch(function(){});
@@ -2361,8 +2358,7 @@ function delAcc(i){
 }
 
 // ============ DATE PICKER ============
-// _previewDate: 달력에서 고른 값(아직 확정 전), today: 현재 확정된 날짜
-let _previewDate = null;
+let _pendingDate = null; // 달력에서 고른 날짜(아직 미확정)
 
 function openDatePicker(){
   const inp = document.getElementById('datePickerInp');
@@ -2370,46 +2366,46 @@ function openDatePicker(){
   else if(inp) inp.click();
 }
 
+// 달력에서 날짜 고르면 → 미리보기만, today는 아직 변경 안 함
 function onDatePickerChange(val){
   if(!val) return;
-  _previewDate = val;
-  // 라벨만 미리보기로 업데이트 (today 변수는 아직 변경 안 함)
-  _setDateLabel(val);
-  // 선택·닫기 버튼 표시
-  const realToday = getDateStr(new Date());
-  document.getElementById('btnSelectDate').style.display = '';
-  document.getElementById('btnCloseDate').style.display  = '';
+  _pendingDate = val;
+  _applyDateLabel(val); // 라벨만 미리 변경
+  document.getElementById('btnDateSelect').style.display = '';
+  document.getElementById('btnDateClose').style.display  = '';
 }
 
+// '선택' 버튼 → today 확정 + 테이블 로드
 function confirmDateSelect(){
-  if(!_previewDate) return;
+  if(!_pendingDate) return;
   saveCurrentRows(); saveDB(true);
-  today = _previewDate;
-  _previewDate = null;
-  _setDateLabel(today);
+  today = _pendingDate;
+  _pendingDate = null;
+  _applyDateLabel(today);
   document.getElementById('datePickerInp').value = today;
-  document.getElementById('btnSelectDate').style.display = 'none';
-  // 오늘이 아닌 날짜면 닫기 버튼 유지, 오늘이면 숨김
+  document.getElementById('btnDateSelect').style.display = 'none';
   const realToday = getDateStr(new Date());
-  document.getElementById('btnCloseDate').style.display = (today !== realToday) ? '' : 'none';
+  // 오늘이 아닌 날짜면 닫기 버튼 유지
+  document.getElementById('btnDateClose').style.display = (today !== realToday) ? '' : 'none';
   loadTodayRows();
   calcSummary();
 }
 
+// '닫기' 버튼 → 실제 오늘로 복귀
 function backToRealToday(){
   const realToday = getDateStr(new Date());
   saveCurrentRows(); saveDB(true);
   today = realToday;
-  _previewDate = null;
-  _setDateLabel(today);
+  _pendingDate = null;
+  _applyDateLabel(today);
   document.getElementById('datePickerInp').value = today;
-  document.getElementById('btnSelectDate').style.display = 'none';
-  document.getElementById('btnCloseDate').style.display  = 'none';
+  document.getElementById('btnDateSelect').style.display = 'none';
+  document.getElementById('btnDateClose').style.display  = 'none';
   loadTodayRows();
   calcSummary();
 }
 
-function _setDateLabel(val){
+function _applyDateLabel(val){
   const d = new Date(val + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
