@@ -1,12 +1,11 @@
 {
   "name": "BN 업무일지",
   "short_name": "BN업무일지",
-  "description": "빛나 인테리어 작업관리 시스템",
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#ffffff",
+  "background_color": "#1B3A6B",
   "theme_color": "#1B3A6B",
+  "description": "빛나 인테리어 업무일지",
   "icons": [
     {
       "src": "icon-192.png",
@@ -19,14 +18,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "icon-transparent.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
     }
-  ],
-  "categories": ["business", "productivity"],
-  "lang": "ko"
+  ]
 }
