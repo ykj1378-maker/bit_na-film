@@ -412,7 +412,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 .win-btn { display: none !important; }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .sum-panel { display: none !important; }
   .table-wrap { border-left: none !important; padding: 8px !important; }
   .work-table { min-width: 520px; }
@@ -528,7 +528,14 @@ window._fbReady=true;
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div class="date-display" id="todayLbl" onclick="openCustomDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택 (터치하여 변경)" style="cursor:pointer;position:relative;">
+        <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
+      </div>
+      <button id="backTodayBtn" onclick="backToToday()" title="오늘 날짜로 돌아가기"
+        style="display:none;background:#E53E3E;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">
+        닫기
+      </button>
     </div>
     <button class="tb-btn gold" onclick="openCalc()">계산기</button>
     <div class="search-wrap" id="searchWrap">
@@ -915,25 +922,6 @@ window._fbReady=true;
   </div>
 </div>
 
-<!-- CUSTOM DATE PICKER -->
-<div class="modal-overlay" id="customDateMod" style="z-index:9100;">
-  <div class="modal" style="--mw:320px;border-radius:16px;overflow:hidden;">
-    <div class="modal-head" style="background:var(--primary);">
-      <h3>📅 날짜 선택</h3>
-      <div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('customDateMod')">✕</button></div>
-    </div>
-    <div class="modal-body" style="padding:24px 20px 16px;text-align:center;">
-      <input type="date" id="customDateInp"
-        style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;outline:none;color:var(--primary);font-weight:700;cursor:pointer;background:#fafbfd;box-sizing:border-box;">
-      <div style="font-size:12px;color:var(--muted);margin-top:10px;">날짜를 선택한 후 <strong>설정</strong> 버튼을 누르세요</div>
-    </div>
-    <div class="modal-foot" style="justify-content:center;gap:10px;">
-      <button class="btn btn-s" onclick="goToToday()" style="background:#e8f4ff;color:var(--primary);border:1.5px solid var(--primary-light);font-weight:700;">오늘</button>
-      <button class="btn btn-p" onclick="applyCustomDate()" style="min-width:80px;">설정</button>
-    </div>
-  </div>
-</div>
-
 <!-- RESET MOD -->
 <div class="modal-overlay" id="resetMod" style="z-index:9500">
   <div class="modal" style="--mw:400px">
@@ -1044,7 +1032,7 @@ function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 function loadDB(){
   try{
     const r=localStorage.getItem('bn_db2');
-    if(r){const p=JSON.parse(r);if(p&&p.config)p.config.savePath='';Object.assign(DB,p);if(!DB.accounts||DB.accounts.length===0)DB.accounts=[{id:'ykj1378',pw:'dbsrudwls0!'}];}
+    if(r){const p=JSON.parse(r);if(p&&p.config)p.config.savePath='';Object.assign(DB,p);}
   }catch(e){}
   function _sync(){
     if(!window._fbReady||!window._fbLoad)return;
@@ -1052,7 +1040,7 @@ function loadDB(){
       if(!c)return;
       const lt=DB.config&&DB.config._savedAt?new Date(DB.config._savedAt):new Date(0);
       const ct=c.config&&c.config._savedAt?new Date(c.config._savedAt):new Date(0);
-      if(ct>=lt){const savedAccs=DB.accounts&&DB.accounts.length>0?DB.accounts.slice():null;if(c.config)c.config.savePath='';Object.assign(DB,c);if(savedAccs&&savedAccs.length>0)DB.accounts=savedAccs;localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();}
+      if(ct>=lt){const prev=DB.accounts;if(c.config)c.config.savePath='';Object.assign(DB,c);DB.accounts=prev;localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();}
     }).catch(function(){});
   }
   if(window._fbReady){_sync();}else{setTimeout(_sync,1500);}
@@ -1241,6 +1229,8 @@ function loadMemo(){
 function appInit(){
   checkLogin();
   today = getDateStr(new Date());
+  const _dp = document.getElementById('datePickerInp');
+  if(_dp) _dp.value = today;
   updateTodayLabel();
   loadTodayRows();
   loadMemo();
@@ -1280,6 +1270,7 @@ function updateTodayLabel(){
   const d = new Date(today + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
+  const inp = document.getElementById('datePickerInp');
   let span = lbl.querySelector('.lbl-text');
   if(!span){
     span = document.createElement('span');
@@ -1288,6 +1279,7 @@ function updateTodayLabel(){
     lbl.insertBefore(span, lbl.firstChild);
   }
   span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  if(inp) inp.value = today;
 }
 
 // ============ TABLE ============
@@ -2333,12 +2325,10 @@ function renderAccList(){
   });
 }
 function syncAccounts(){
-  // 계정을 localStorage에 즉시 반영 (PWA/브라우저 모두)
+  // localStorage에도 즉시 반영 (PWA/브라우저 환경 모두 적용)
   try{
-    const stored = localStorage.getItem('bn_db2');
-    const db = stored ? JSON.parse(stored) : {};
-    db.accounts = DB.accounts;
-    localStorage.setItem('bn_db2', JSON.stringify(db));
+    const db=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
+    localStorage.setItem('bn_db2',JSON.stringify(db));
   }catch(e){}
   if(window.pywebview && window.pywebview.api){
     window.pywebview.api.save_accounts(JSON.stringify(DB.accounts)).catch(function(){});
@@ -2368,19 +2358,18 @@ function delAcc(i){
   toast('🗑️','계정이 삭제되었습니다.');
 }
 
-// ============ CUSTOM DATE PICKER ============
-function openCustomDatePicker(){
-  const inp = document.getElementById('customDateInp');
-  if(inp) inp.value = today;
-  openMod('customDateMod');
+// ============ EXIT ============
+function openDatePicker(){
+  const inp = document.getElementById('datePickerInp');
+  if(inp && inp.showPicker) inp.showPicker();
+  else if(inp) inp.click();
 }
 
-function applyCustomDate(){
-  const val = document.getElementById('customDateInp').value;
+function onDatePickerChange(val){
   if(!val) return;
-  closeMod('customDateMod');
   saveCurrentRows(); saveDB(true);
   today = val;
+  const realToday = getDateStr(new Date());
   const d = new Date(val + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
@@ -2392,23 +2381,25 @@ function applyCustomDate(){
     lbl.insertBefore(span, lbl.firstChild);
   }
   span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  document.getElementById('datePickerInp').value = val;
+  // 오늘이 아닌 다른 날짜 선택 시 '닫기' 버튼 표시
+  const backBtn = document.getElementById('backTodayBtn');
+  if(backBtn) backBtn.style.display = (val !== realToday) ? '' : 'none';
   loadTodayRows();
   calcSummary();
 }
 
-function goToToday(){
+function backToToday(){
   const realToday = getDateStr(new Date());
-  closeMod('customDateMod');
   saveCurrentRows(); saveDB(true);
   today = realToday;
   updateTodayLabel();
+  document.getElementById('datePickerInp').value = realToday;
+  const backBtn = document.getElementById('backTodayBtn');
+  if(backBtn) backBtn.style.display = 'none';
   loadTodayRows();
   calcSummary();
 }
-
-// 하위 호환용 (기존 코드에서 호출될 수 있음)
-function openDatePicker(){ openCustomDatePicker(); }
-function onDatePickerChange(val){ if(!val) return; applyCustomDate(); }
 
 function exitApp(){
   // 타이틀바 X 버튼: 저장 여부 확인 후 종료
