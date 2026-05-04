@@ -528,8 +528,7 @@ window._fbReady=true;
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
-      <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
+    <div class="date-display" id="todayLbl" onclick="openDatePickerModal()" title="날짜 선택" style="cursor:pointer;position:relative;">
     </div>
     <button class="tb-btn gold" onclick="openCalc()">계산기</button>
     <div class="search-wrap" id="searchWrap">
@@ -936,6 +935,21 @@ window._fbReady=true;
   </div>
 </div>
 
+<!-- DATE PICKER MODAL -->
+<div class="modal-overlay" id="datePickerMod" style="z-index:9100">
+  <div class="modal" style="--mw:340px">
+    <div class="modal-head"><h3>📅 날짜 선택</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('datePickerMod')">✕</button></div></div>
+    <div class="modal-body" style="padding:20px 24px 10px;text-align:center;">
+      <input type="date" id="datePickerInp" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;outline:none;text-align:center;background:#fafbfd;cursor:pointer;" onchange="previewPickedDate(this.value)">
+      <div id="datePickerPreview" style="margin-top:10px;font-size:13px;font-weight:700;color:var(--primary);min-height:20px;"></div>
+    </div>
+    <div class="modal-foot" style="justify-content:center;gap:12px;">
+      <button class="btn btn-s" onclick="goToday()">오늘</button>
+      <button class="btn btn-p" onclick="applyPickedDate()">적용</button>
+    </div>
+  </div>
+</div>
+
 <!-- ACCOUNT MGMT -->
 <div class="modal-overlay" id="accMod">
   <div class="modal" style="--mw:420px">
@@ -1026,7 +1040,7 @@ function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 function loadDB(){
   try{
     const r=localStorage.getItem('bn_db2');
-    if(r){const p=JSON.parse(r);if(p&&p.config)p.config.savePath='';const prev=DB.accounts;Object.assign(DB,p);DB.accounts=prev;}
+    if(r){const p=JSON.parse(r);if(p&&p.config)p.config.savePath='';Object.assign(DB,p);}
   }catch(e){}
   function _sync(){
     if(!window._fbReady||!window._fbLoad)return;
@@ -1261,7 +1275,7 @@ function appInit(){
 }
 
 function updateTodayLabel(){
-  const d=new Date();
+  const d=new Date(today + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
   const inp = document.getElementById('datePickerInp');
@@ -2319,7 +2333,8 @@ function renderAccList(){
   });
 }
 function syncAccounts(){
-  // PWA: localStorage에 저장 (pywebview 없음)
+  // localStorage에도 반영 (PWA / 브라우저 환경)
+  localStorage.setItem('bn_db2', JSON.stringify(Object.assign({}, DB, {config: Object.assign({}, DB.config||{}, {savePath:'', savePath2:'', savePath3:''})})));
   if(window.pywebview && window.pywebview.api){
     window.pywebview.api.save_accounts(JSON.stringify(DB.accounts)).catch(function(){});
   }
@@ -2349,10 +2364,34 @@ function delAcc(i){
 }
 
 // ============ EXIT ============
-function openDatePicker(){
+function openDatePickerModal(){
   const inp = document.getElementById('datePickerInp');
-  if(inp && inp.showPicker) inp.showPicker();
-  else if(inp) inp.click();
+  if(inp) inp.value = today;
+  previewPickedDate(today);
+  openMod('datePickerMod');
+}
+
+function previewPickedDate(val){
+  if(!val) return;
+  const d = new Date(val + 'T00:00:00');
+  const days=['일','월','화','수','목','금','토'];
+  const preview = document.getElementById('datePickerPreview');
+  if(preview) preview.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+
+function applyPickedDate(){
+  const inp = document.getElementById('datePickerInp');
+  if(inp && inp.value) onDatePickerChange(inp.value);
+  closeMod('datePickerMod');
+}
+
+function goToday(){
+  const realToday = getDateStr(new Date());
+  const inp = document.getElementById('datePickerInp');
+  if(inp) inp.value = realToday;
+  previewPickedDate(realToday);
+  onDatePickerChange(realToday);
+  closeMod('datePickerMod');
 }
 
 function onDatePickerChange(val){
