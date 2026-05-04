@@ -528,7 +528,7 @@ window._fbReady=true;
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div class="date-display" id="todayLbl" onclick="openDatePickerModal()" title="날짜 선택" style="cursor:pointer;position:relative;">
+    <div class="date-display" id="todayLbl" onclick="openCustomDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
     </div>
     <button class="tb-btn gold" onclick="openCalc()">계산기</button>
     <div class="search-wrap" id="searchWrap">
@@ -915,6 +915,25 @@ window._fbReady=true;
   </div>
 </div>
 
+<!-- CUSTOM DATE PICKER -->
+<div class="modal-overlay" id="customDateMod" style="z-index:9100;">
+  <div class="modal" style="--mw:320px;border-radius:16px;overflow:hidden;">
+    <div class="modal-head" style="background:var(--primary);">
+      <h3>📅 날짜 선택</h3>
+      <div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('customDateMod')">✕</button></div>
+    </div>
+    <div class="modal-body" style="padding:24px 20px 16px;text-align:center;">
+      <input type="date" id="customDateInp"
+        style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;outline:none;color:var(--primary);font-weight:700;cursor:pointer;background:#fafbfd;box-sizing:border-box;">
+      <div style="font-size:12px;color:var(--muted);margin-top:10px;">날짜를 선택한 후 <strong>설정</strong> 버튼을 누르세요</div>
+    </div>
+    <div class="modal-foot" style="justify-content:center;gap:10px;">
+      <button class="btn btn-s" onclick="goToToday()" style="background:#e8f4ff;color:var(--primary);border:1.5px solid var(--primary-light);font-weight:700;">오늘</button>
+      <button class="btn btn-p" onclick="applyCustomDate()" style="min-width:80px;">설정</button>
+    </div>
+  </div>
+</div>
+
 <!-- RESET MOD -->
 <div class="modal-overlay" id="resetMod" style="z-index:9500">
   <div class="modal" style="--mw:400px">
@@ -931,21 +950,6 @@ window._fbReady=true;
     <div class="modal-foot">
       <button class="btn btn-s" onclick="closeMod('resetMod')">취소</button>
       <button class="btn" style="background:var(--danger);color:#fff;border:none" onclick="doReset()">확인 (초기화)</button>
-    </div>
-  </div>
-</div>
-
-<!-- DATE PICKER MODAL -->
-<div class="modal-overlay" id="datePickerMod" style="z-index:9100">
-  <div class="modal" style="--mw:340px">
-    <div class="modal-head"><h3>📅 날짜 선택</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('datePickerMod')">✕</button></div></div>
-    <div class="modal-body" style="padding:20px 24px 10px;text-align:center;">
-      <input type="date" id="datePickerInp" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;outline:none;text-align:center;background:#fafbfd;cursor:pointer;" onchange="previewPickedDate(this.value)">
-      <div id="datePickerPreview" style="margin-top:10px;font-size:13px;font-weight:700;color:var(--primary);min-height:20px;"></div>
-    </div>
-    <div class="modal-foot" style="justify-content:center;gap:12px;">
-      <button class="btn btn-s" onclick="goToday()">오늘</button>
-      <button class="btn btn-p" onclick="applyPickedDate()">적용</button>
     </div>
   </div>
 </div>
@@ -1040,7 +1044,7 @@ function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 function loadDB(){
   try{
     const r=localStorage.getItem('bn_db2');
-    if(r){const p=JSON.parse(r);if(p&&p.config)p.config.savePath='';Object.assign(DB,p);}
+    if(r){const p=JSON.parse(r);if(p&&p.config)p.config.savePath='';Object.assign(DB,p);if(!DB.accounts||DB.accounts.length===0)DB.accounts=[{id:'ykj1378',pw:'dbsrudwls0!'}];}
   }catch(e){}
   function _sync(){
     if(!window._fbReady||!window._fbLoad)return;
@@ -1048,7 +1052,7 @@ function loadDB(){
       if(!c)return;
       const lt=DB.config&&DB.config._savedAt?new Date(DB.config._savedAt):new Date(0);
       const ct=c.config&&c.config._savedAt?new Date(c.config._savedAt):new Date(0);
-      if(ct>=lt){const prev=DB.accounts;if(c.config)c.config.savePath='';Object.assign(DB,c);DB.accounts=prev;localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();}
+      if(ct>=lt){const savedAccs=DB.accounts&&DB.accounts.length>0?DB.accounts.slice():null;if(c.config)c.config.savePath='';Object.assign(DB,c);if(savedAccs&&savedAccs.length>0)DB.accounts=savedAccs;localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();}
     }).catch(function(){});
   }
   if(window._fbReady){_sync();}else{setTimeout(_sync,1500);}
@@ -1237,8 +1241,6 @@ function loadMemo(){
 function appInit(){
   checkLogin();
   today = getDateStr(new Date());
-  const _dp = document.getElementById('datePickerInp');
-  if(_dp) _dp.value = today;
   updateTodayLabel();
   loadTodayRows();
   loadMemo();
@@ -1275,10 +1277,9 @@ function appInit(){
 }
 
 function updateTodayLabel(){
-  const d=new Date(today + 'T00:00:00');
+  const d = new Date(today + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
-  const inp = document.getElementById('datePickerInp');
   let span = lbl.querySelector('.lbl-text');
   if(!span){
     span = document.createElement('span');
@@ -1287,7 +1288,6 @@ function updateTodayLabel(){
     lbl.insertBefore(span, lbl.firstChild);
   }
   span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-  if(inp) inp.value = today;
 }
 
 // ============ TABLE ============
@@ -2333,8 +2333,13 @@ function renderAccList(){
   });
 }
 function syncAccounts(){
-  // localStorage에도 반영 (PWA / 브라우저 환경)
-  localStorage.setItem('bn_db2', JSON.stringify(Object.assign({}, DB, {config: Object.assign({}, DB.config||{}, {savePath:'', savePath2:'', savePath3:''})})));
+  // 계정을 localStorage에 즉시 반영 (PWA/브라우저 모두)
+  try{
+    const stored = localStorage.getItem('bn_db2');
+    const db = stored ? JSON.parse(stored) : {};
+    db.accounts = DB.accounts;
+    localStorage.setItem('bn_db2', JSON.stringify(db));
+  }catch(e){}
   if(window.pywebview && window.pywebview.api){
     window.pywebview.api.save_accounts(JSON.stringify(DB.accounts)).catch(function(){});
   }
@@ -2363,39 +2368,17 @@ function delAcc(i){
   toast('🗑️','계정이 삭제되었습니다.');
 }
 
-// ============ EXIT ============
-function openDatePickerModal(){
-  const inp = document.getElementById('datePickerInp');
+// ============ CUSTOM DATE PICKER ============
+function openCustomDatePicker(){
+  const inp = document.getElementById('customDateInp');
   if(inp) inp.value = today;
-  previewPickedDate(today);
-  openMod('datePickerMod');
+  openMod('customDateMod');
 }
 
-function previewPickedDate(val){
+function applyCustomDate(){
+  const val = document.getElementById('customDateInp').value;
   if(!val) return;
-  const d = new Date(val + 'T00:00:00');
-  const days=['일','월','화','수','목','금','토'];
-  const preview = document.getElementById('datePickerPreview');
-  if(preview) preview.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-}
-
-function applyPickedDate(){
-  const inp = document.getElementById('datePickerInp');
-  if(inp && inp.value) onDatePickerChange(inp.value);
-  closeMod('datePickerMod');
-}
-
-function goToday(){
-  const realToday = getDateStr(new Date());
-  const inp = document.getElementById('datePickerInp');
-  if(inp) inp.value = realToday;
-  previewPickedDate(realToday);
-  onDatePickerChange(realToday);
-  closeMod('datePickerMod');
-}
-
-function onDatePickerChange(val){
-  if(!val) return;
+  closeMod('customDateMod');
   saveCurrentRows(); saveDB(true);
   today = val;
   const d = new Date(val + 'T00:00:00');
@@ -2409,10 +2392,23 @@ function onDatePickerChange(val){
     lbl.insertBefore(span, lbl.firstChild);
   }
   span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-  document.getElementById('datePickerInp').value = val;
   loadTodayRows();
   calcSummary();
 }
+
+function goToToday(){
+  const realToday = getDateStr(new Date());
+  closeMod('customDateMod');
+  saveCurrentRows(); saveDB(true);
+  today = realToday;
+  updateTodayLabel();
+  loadTodayRows();
+  calcSummary();
+}
+
+// 하위 호환용 (기존 코드에서 호출될 수 있음)
+function openDatePicker(){ openCustomDatePicker(); }
+function onDatePickerChange(val){ if(!val) return; applyCustomDate(); }
 
 function exitApp(){
   // 타이틀바 X 버튼: 저장 여부 확인 후 종료
