@@ -528,10 +528,16 @@ window._fbReady=true;
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
         <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
       </div>
+      <button id="btnSelectDate" class="tb-btn blue"
+        style="display:none;padding:8px 14px;font-size:12px;"
+        onclick="confirmDateSelect()">선택</button>
+      <button id="btnCloseDate" class="tb-btn"
+        style="display:none;padding:8px 14px;font-size:12px;background:#E53E3E;color:#fff;"
+        onclick="backToRealToday()">닫기</button>
     </div>
     <button class="tb-btn gold" onclick="openCalc()">계산기</button>
     <div class="search-wrap" id="searchWrap">
@@ -617,8 +623,6 @@ window._fbReady=true;
   </div>
   <!-- BOTTOM -->
   <div class="bottom-bar">
-    <button id="btnBackToToday" class="bottom-btn" onclick="backToRealToday()"
-      style="display:none;background:#E53E3E;color:#fff;border:none;">📅 오늘로 돌아가기</button>
     <button class="bottom-btn btn-export" onclick="openExport()">내보내기</button>
     <button class="bottom-btn btn-save" onclick="closeAndSave()">☁️ 저장</button>
   </div>
@@ -1232,7 +1236,6 @@ function appInit(){
   updateTodayLabel();
   loadTodayRows();
   loadMemo();
-  _updateBackToTodayBtn(); // 시작 시 버튼 상태 초기화
   // 날짜 변경 감지: 자정이 지나면 새 날짜로 초기화
   setInterval(()=>{
     const newDay = getDateStr(new Date());
@@ -1241,7 +1244,6 @@ function appInit(){
       updateTodayLabel();
       loadTodayRows();   // 새 날짜는 빈 행으로 시작
       calcSummary();
-      _updateBackToTodayBtn();
     }
   }, 30000); // 30초마다 체크
   window.addEventListener('beforeunload',()=>{ saveCurrentRows(); saveDB(false); });
@@ -2325,9 +2327,10 @@ function renderAccList(){
   });
 }
 function syncAccounts(){
+  // localStorage에 즉시 저장 (PWA/브라우저 모두)
   try{
-    const snap=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
-    localStorage.setItem('bn_db2',JSON.stringify(snap));
+    const snap = Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
+    localStorage.setItem('bn_db2', JSON.stringify(snap));
   }catch(e){}
   if(window.pywebview && window.pywebview.api){
     window.pywebview.api.save_accounts(JSON.stringify(DB.accounts)).catch(function(){});
@@ -2358,6 +2361,8 @@ function delAcc(i){
 }
 
 // ============ DATE PICKER ============
+// _previewDate: 달력에서 고른 값(아직 확정 전), today: 현재 확정된 날짜
+let _previewDate = null;
 
 function openDatePicker(){
   const inp = document.getElementById('datePickerInp');
@@ -2365,40 +2370,46 @@ function openDatePicker(){
   else if(inp) inp.click();
 }
 
-// 달력에서 날짜 선택 → 즉시 해당 날짜 테이블로 전환
 function onDatePickerChange(val){
   if(!val) return;
+  _previewDate = val;
+  // 라벨만 미리보기로 업데이트 (today 변수는 아직 변경 안 함)
+  _setDateLabel(val);
+  // 선택·닫기 버튼 표시
+  const realToday = getDateStr(new Date());
+  document.getElementById('btnSelectDate').style.display = '';
+  document.getElementById('btnCloseDate').style.display  = '';
+}
+
+function confirmDateSelect(){
+  if(!_previewDate) return;
   saveCurrentRows(); saveDB(true);
-  today = val;
-  _applyDateLabel(today);
+  today = _previewDate;
+  _previewDate = null;
+  _setDateLabel(today);
   document.getElementById('datePickerInp').value = today;
+  document.getElementById('btnSelectDate').style.display = 'none';
+  // 오늘이 아닌 날짜면 닫기 버튼 유지, 오늘이면 숨김
+  const realToday = getDateStr(new Date());
+  document.getElementById('btnCloseDate').style.display = (today !== realToday) ? '' : 'none';
   loadTodayRows();
   calcSummary();
-  // 실제 오늘과 다른 날짜면 하단 '오늘로 돌아가기' 버튼 표시
-  _updateBackToTodayBtn();
 }
 
-// '오늘로 돌아가기' 버튼 표시/숨김 제어
-function _updateBackToTodayBtn(){
-  const realToday = getDateStr(new Date());
-  const btn = document.getElementById('btnBackToToday');
-  if(btn) btn.style.display = (today !== realToday) ? '' : 'none';
-}
-
-// 하단 '오늘로 돌아가기' 클릭 → 실제 오늘 날짜로 즉시 복귀
 function backToRealToday(){
   const realToday = getDateStr(new Date());
   saveCurrentRows(); saveDB(true);
   today = realToday;
-  _applyDateLabel(today);
+  _previewDate = null;
+  _setDateLabel(today);
   document.getElementById('datePickerInp').value = today;
-  const btn = document.getElementById('btnBackToToday');
-  if(btn) btn.style.display = 'none';
+  document.getElementById('btnSelectDate').style.display = 'none';
+  document.getElementById('btnCloseDate').style.display  = 'none';
   loadTodayRows();
   calcSummary();
 }
 
-function _applyDateLabel(val){
+function _setDateLabel(val){
   const d = new Date(val + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
