@@ -505,25 +505,28 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
-      <button ontouchstart="event.stopPropagation();toggleMenu('mf');" onmousedown="toggleMenu('mf')">파일</button>
+      <button ontouchend="event.stopPropagation();toggleMenu('mf');" onclick="toggleMenu('mf')">파일</button>
       <div class="dropdown">
-        <button ontouchstart="event.stopPropagation()" onclick="mAction('save')">저장</button>
-        <button ontouchstart="event.stopPropagation()" onclick="mAction('saveas')">다른 이름으로 저장</button>
+        <button ontouchend="event.stopPropagation()" onclick="mAction('save')">저장</button>
+        <button ontouchend="event.stopPropagation()" onclick="mAction('saveas')">다른 이름으로 저장</button>
       </div>
     </div>
     <div class="menu-item" id="mv">
-      <button ontouchstart="event.stopPropagation();toggleMenu('mv');" onmousedown="toggleMenu('mv')">보기</button>
+      <button ontouchend="event.stopPropagation();toggleMenu('mv');" onclick="toggleMenu('mv')">보기</button>
       <div class="dropdown">
-        <button ontouchstart="event.stopPropagation()" onclick="openDateView()">날짜</button>
+        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('dateMod','날짜별 조회')">날짜</button>
+        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('statsMod','통계')">통계</button>
+        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('graphMod','그래프 조회')">그래프</button>
+        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('exportMod','내보내기')">내보내기</button>
       </div>
     </div>
     <div class="menu-item" id="ms">
-      <button ontouchstart="event.stopPropagation();toggleMenu('ms');" onmousedown="toggleMenu('ms')">설정</button>
+      <button ontouchend="event.stopPropagation();toggleMenu('ms');" onclick="toggleMenu('ms')">설정</button>
       <div class="dropdown">
-        <button ontouchstart="event.stopPropagation()" onclick="openWorkerMgr()">작업자관리</button>
-        <button ontouchstart="event.stopPropagation()" onclick="openAccMgmt()">계정 관리</button>
-        <button ontouchstart="event.stopPropagation()" onclick="openResetMod()">초기화</button>
-        <button ontouchstart="event.stopPropagation()" onclick="logout()">로그아웃</button>
+        <button ontouchend="event.stopPropagation()" onclick="openWorkerMgr()">작업자관리</button>
+        <button ontouchend="event.stopPropagation()" onclick="openAccMgmt()">계정 관리</button>
+        <button ontouchend="event.stopPropagation()" onclick="openResetMod()">초기화</button>
+        <button ontouchend="event.stopPropagation()" onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -1696,33 +1699,41 @@ function schedSave(){
 }
 
 // ============ MENU ============
-// ============ MENU ============
-var _menuLocked = false;
+var _menuOpenId = null;
 
 function toggleMenu(id){
-  if(_menuLocked) return;
-  _menuLocked = true;
-  setTimeout(function(){ _menuLocked = false; }, 400);
-
   var target = document.getElementById(id);
   var wasOpen = target.classList.contains('open');
   document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+  _menuOpenId = null;
   if(!wasOpen){
     target.classList.add('open');
+    _menuOpenId = id;
   }
 }
 
-// 외부 탭/클릭 시 메뉴 닫기 (버블링 방지 후 처리)
-document.addEventListener('touchstart', function(e){
-  if(_menuLocked) return;
+// 메뉴 항목 → 새 창으로 크게 열기
+function openInNewWindow(modId, title) {
+  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open'));
+  _menuOpenId = null;
+  if (modId === 'dateMod') { openDateView(); }
+  else if (modId === 'statsMod') { openStats(); }
+  else if (modId === 'graphMod') { openGraphMod(); }
+  else if (modId === 'exportMod') { openExport(); }
+  else { openMod(modId); }
+}
+
+// 외부 터치/클릭 시 메뉴 닫기
+document.addEventListener('touchend', function(e){
   if(!e.target.closest('.menu-item')){
     document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+    _menuOpenId = null;
   }
 }, {passive:true});
 document.addEventListener('click', function(e){
-  if(_menuLocked) return;
   if(!e.target.closest('.menu-item')){
     document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+    _menuOpenId = null;
   }
 });
 
@@ -2361,9 +2372,18 @@ function closeWindow(){
   // toast 제거
 }
 function closeAndSave(){
-  saveCurrentRows(); saveDB(false);
-  // 닫기(저장) 확인 팝업을 화면 중앙에 표시
-  document.getElementById('closeSaveMod').classList.add('show');
+  saveCurrentRows();
+  saveDB(true).finally(function(){
+    if(window.pywebview && window.pywebview.api){
+      window.pywebview.api.close_window();
+    } else if(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches){
+      // PWA/모바일: window.close 불가 → 저장 완료 안내
+      toast('💾','저장 완료! 홈 버튼으로 나가세요.');
+    } else {
+      try{ window.close(); }catch(e){}
+      setTimeout(function(){ toast('💾','저장이 완료되었습니다.'); }, 200);
+    }
+  });
 }
 function doCloseSave(){
   closeMod('closeSaveMod');
