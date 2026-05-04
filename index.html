@@ -507,7 +507,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <div class="menu-item" id="mf">
       <button onclick="toggleMenu('mf')">파일</button>
       <div class="dropdown">
-        <button onclick="mAction('open')">열기</button>
         <button onclick="mAction('save')">저장</button>
         <button onclick="mAction('saveas')">다른 이름으로 저장</button>
       </div>
@@ -516,18 +515,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       <button onclick="toggleMenu('mv')">보기</button>
       <div class="dropdown">
         <button onclick="openDateView()">날짜</button>
-        <button onclick="openStats()">통계</button>
-        <button onclick="openGraphMod()">그래프</button>
-        <button onclick="openPathSettings()">저장경로위치</button>
-      </div>
-    </div>
-    <div class="menu-item" id="ms">
-      <button onclick="toggleMenu('ms')">설정</button>
-      <div class="dropdown">
-        <button onclick="openWorkerMgr()">작업자관리</button>
-        <button onclick="openAccMgmt()">계정 관리</button>
-        <button onclick="openResetMod()">초기화</button>
-        <button onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -1702,15 +1689,23 @@ function schedSave(){
 
 // ============ MENU ============
 // ============ MENU ============
+var _menuJustOpened = false;
+
 function toggleMenu(id){
   var target = document.getElementById(id);
   var wasOpen = target.classList.contains('open');
   document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
-  if(!wasOpen) target.classList.add('open');
+  if(!wasOpen){
+    target.classList.add('open');
+    // 모바일: 열리자마자 외부클릭 리스너가 닫지 않도록 플래그 설정
+    _menuJustOpened = true;
+    setTimeout(function(){ _menuJustOpened = false; }, 50);
+  }
 }
 
-// 외부 클릭 시 메뉴 닫기 (click만 사용 - 모바일도 click 발생함)
+// 외부 클릭/탭 시 메뉴 닫기
 document.addEventListener('click', function(e){
+  if(_menuJustOpened) return;
   if(!e.target.closest('.menu-item')){
     document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
   }
