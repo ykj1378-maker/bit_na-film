@@ -505,28 +505,28 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
-      <button onclick="menuTap(event,'mf')">파일</button>
+      <button onclick="toggleMenu('mf')">파일</button>
       <div class="dropdown">
-        <button onclick="menuItemTap(event,function(){mAction('save')})">저장</button>
-        <button onclick="menuItemTap(event,function(){mAction('saveas')})">다른 이름으로 저장</button>
+        <button onclick="mAction('save')">저장</button>
+        <button onclick="mAction('saveas')">다른 이름으로 저장</button>
       </div>
     </div>
     <div class="menu-item" id="mv">
-      <button onclick="menuTap(event,'mv')">보기</button>
+      <button onclick="toggleMenu('mv')">보기</button>
       <div class="dropdown">
-        <button onclick="menuItemTap(event,function(){openInNewWindow('dateMod','날짜별 조회')})">날짜</button>
-        <button onclick="menuItemTap(event,function(){openInNewWindow('statsMod','통계')})">통계</button>
-        <button onclick="menuItemTap(event,function(){openInNewWindow('graphMod','그래프 조회')})">그래프</button>
-        <button onclick="menuItemTap(event,function(){openInNewWindow('exportMod','내보내기')})">내보내기</button>
+        <button onclick="openInNewWindow('dateMod','날짜별 조회')">날짜</button>
+        <button onclick="openInNewWindow('statsMod','통계')">통계</button>
+        <button onclick="openInNewWindow('graphMod','그래프 조회')">그래프</button>
+        <button onclick="openInNewWindow('exportMod','내보내기')">내보내기</button>
       </div>
     </div>
     <div class="menu-item" id="ms">
-      <button onclick="menuTap(event,'ms')">설정</button>
+      <button onclick="toggleMenu('ms')">설정</button>
       <div class="dropdown">
-        <button onclick="menuItemTap(event,function(){openWorkerMgr()})">작업자관리</button>
-        <button onclick="menuItemTap(event,function(){openAccMgmt()})">계정 관리</button>
-        <button onclick="menuItemTap(event,function(){openResetMod()})">초기화</button>
-        <button onclick="menuItemTap(event,function(){logout()})">로그아웃</button>
+        <button onclick="openWorkerMgr()">작업자관리</button>
+        <button onclick="openAccMgmt()">계정 관리</button>
+        <button onclick="openResetMod()">초기화</button>
+        <button onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -1700,51 +1700,31 @@ function schedSave(){
 
 // ============ MENU ============
 var _menuOpenId = null;
-var _menuTapLock = false;
+var _menuLock = false;
 
-// 메뉴 버튼 탭 (열기/닫기)
-function menuTap(e, id){
-  e.preventDefault();
-  e.stopPropagation();
-  if(_menuTapLock) return;
-  _menuTapLock = true;
-  setTimeout(function(){ _menuTapLock = false; }, 300);
+function _closeAllMenus(){
+  document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+  _menuOpenId = null;
+}
+
+function toggleMenu(id){
+  // 잠금: 연속 이벤트 중복 방지 (touch → click 중복 발화 차단)
+  if(_menuLock) return;
+  _menuLock = true;
+  setTimeout(function(){ _menuLock = false; }, 400);
 
   var target = document.getElementById(id);
   var wasOpen = target.classList.contains('open');
-  // 모든 메뉴 닫기
-  document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
-  _menuOpenId = null;
+  _closeAllMenus();
   if(!wasOpen){
     target.classList.add('open');
     _menuOpenId = id;
   }
 }
 
-// 드롭다운 항목 탭
-function menuItemTap(e, fn){
-  e.preventDefault();
-  e.stopPropagation();
-  document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
-  _menuOpenId = null;
-  setTimeout(fn, 50);
-}
-
-function toggleMenu(id){ menuTap({preventDefault:function(){},stopPropagation:function(){}}, id); }
-
-// 메뉴 외부 클릭/터치 시 닫기 (click만 사용 - touch 이벤트와 충돌 방지)
-document.addEventListener('click', function(e){
-  if(_menuTapLock) return;
-  if(!e.target.closest('.menu-item')){
-    document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
-    _menuOpenId = null;
-  }
-});
-
-// 메뉴 항목 → 새 창으로 크게 열기
+// 메뉴 항목 실행 (드롭다운 닫고 동작)
 function openInNewWindow(modId, title) {
-  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open'));
-  _menuOpenId = null;
+  _closeAllMenus();
   if (modId === 'dateMod') { openDateView(); }
   else if (modId === 'statsMod') { openStats(); }
   else if (modId === 'graphMod') { openGraphMod(); }
@@ -1752,8 +1732,15 @@ function openInNewWindow(modId, title) {
   else { openMod(modId); }
 }
 
+// 외부 클릭 시 메뉴 닫기 (touchend 제거 — touch→click 순서로 이미 처리됨)
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.menu-item')){
+    _closeAllMenus();
+  }
+});
+
 function mAction(a){
-  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));
+  _closeAllMenus();
   if(a==='save'){ saveCurrentRows(); saveDB(false); }
   else if(a==='saveas') doSaveAs();
   else if(a==='open') doOpen();
@@ -2384,50 +2371,47 @@ function doExitNoSave(){
 
 function closeWindow(){
   saveCurrentRows(); saveDB(true);
+  // toast 제거
 }
 function closeAndSave(){
   saveCurrentRows();
   saveDB(true).finally(function(){
-    if(window.pywebview && window.pywebview.api){
-      window.pywebview.api.close_window();
-    } else {
-      _pwaExit();
-    }
+    _appExit();
   });
 }
 function doCloseSave(){
   closeMod('closeSaveMod');
   saveCurrentRows();
   saveDB(true).finally(function(){
-    if(window.pywebview && window.pywebview.api){
-      window.pywebview.api.close_window();
-    } else {
-      _pwaExit();
-    }
+    _appExit();
   });
 }
 
-// PWA/브라우저 종료 처리
-function _pwaExit(){
-  var isPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-  // 저장 완료 토스트 먼저 표시
-  toast('💾','저장 완료!');
-  setTimeout(function(){
-    // 방법1: history가 있으면 뒤로가기로 종료
-    if(isPWA && history.length > 1){
-      history.go(-(history.length - 1));
-      setTimeout(function(){ window.close(); }, 200);
-      return;
-    }
-    // 방법2: about:blank 이동 후 close
-    if(isPWA){
-      var w = window.open('about:blank','_self');
-      if(w) w.close();
-      return;
-    }
-    // 방법3: 일반 브라우저
-    try{ window.close(); }catch(e){}
-  }, 600);
+// ── 앱 종료 통합 함수 ──
+function _appExit(){
+  // 1) pywebview (데스크톱 앱)
+  if(window.pywebview && window.pywebview.api){
+    window.pywebview.api.close_window();
+    return;
+  }
+  // 2) PWA 스탠드얼론 (홈화면 설치 앱)
+  if(window.navigator.standalone === true ||
+     window.matchMedia('(display-mode: standalone)').matches){
+    toast('💾','저장 완료!');
+    // Android: history 뒤로가기로 앱 종료
+    setTimeout(function(){
+      if(history.length > 1){
+        history.go(-history.length);
+      } else {
+        // iOS/Android fallback: blank 이동
+        location.replace('about:blank');
+      }
+    }, 700);
+    return;
+  }
+  // 3) 일반 브라우저
+  try{ window.close(); }catch(e){}
+  toast('💾','저장이 완료되었습니다.');
 }
 
 // ============ PATH SETTINGS ============
@@ -3057,11 +3041,11 @@ function autoFillWorker(input) {
 
 loadDB();
 
-// PWA: 앱 시작 시 히스토리 엔트리 추가 (뒤로가기 종료 지원)
+// PWA 홈화면 앱: history 엔트리 추가 → 뒤로가기 종료 지원
 (function(){
-  var isPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-  if(isPWA && history.length <= 1){
-    history.pushState({pwa:true}, '', location.href);
+  if(window.navigator.standalone === true ||
+     window.matchMedia('(display-mode: standalone)').matches){
+    history.pushState(null, '', location.href);
   }
 })();
 
