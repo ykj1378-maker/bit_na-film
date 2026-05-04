@@ -502,13 +502,13 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <button class="win-btn" onclick="logout()" title="로그아웃" style="-webkit-app-region:no-drag;font-size:10px;padding:0 5px;width:auto;min-width:28px;">🚪</button>
   </div>
 
-    <!-- MENU BAR -->
+  <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
       <button onclick="toggleMenu('mf')">파일</button>
       <div class="dropdown">
-        <button onclick="exportToGoogleDrive()">☁️ 구글드라이브로 내보내기</button>
-        <button onclick="mAction('open')">열기</button>
+        <button onclick="mAction('save')">저장</button>
+        <button onclick="mAction('saveas')">다른 이름으로 저장</button>
       </div>
     </div>
     <div class="menu-item" id="mv">
@@ -517,7 +517,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
         <button onclick="openInNewWindow('dateMod','날짜별 조회')">날짜</button>
         <button onclick="openInNewWindow('statsMod','통계')">통계</button>
         <button onclick="openInNewWindow('graphMod','그래프 조회')">그래프</button>
-        <button onclick="openPathSettings()">저장경로 위치</button>
+        <button onclick="openInNewWindow('exportMod','내보내기')">내보내기</button>
       </div>
     </div>
     <div class="menu-item" id="ms">
@@ -526,6 +526,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
         <button onclick="openWorkerMgr()">작업자관리</button>
         <button onclick="openAccMgmt()">계정 관리</button>
         <button onclick="openResetMod()">초기화</button>
+        <button onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -620,7 +621,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- BOTTOM -->
   <div class="bottom-bar">
     <button class="bottom-btn btn-export" onclick="openExport()">내보내기</button>
-    <button class="bottom-btn btn-save" onclick="closeAndSave()">☁️ 구글드라이브 저장</button>
+    <button class="bottom-btn btn-save" onclick="closeAndSave()">☁️ 드라이브 저장</button>
   </div>
 </div>
 
@@ -879,34 +880,37 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 <!-- PATH SETTINGS -->
 <div class="modal-overlay" id="pathMod">
   <div class="modal" style="--mw:440px">
-    <div class="modal-head">
-      <h3>📱 스마트폰 저장경로 설정</h3>
-      <div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('pathMod')">✕</button></div>
-    </div>
-    <div class="modal-body" style="padding:22px 20px;display:flex;flex-direction:column;gap:16px;">
+    <div class="modal-head"><h3>경로저장설정</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('pathMod')">&#x2715;</button></div></div>
+    <div class="modal-body" style="gap:14px">
 
-      <div style="font-size:12px;color:var(--muted);background:#f8faff;border-radius:8px;padding:12px 14px;border:1px solid var(--border);line-height:1.7;">
-        📌 데이터는 <b>자동으로 이 경로에 저장</b>됩니다.<br>
-        ☁️ 구글 드라이브 저장은 <b>하단 버튼</b>을 사용하세요.
-      </div>
-
-      <div>
-        <label style="display:block;font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px;">📱 스마트폰 저장 폴더</label>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <input type="text" id="savePathInp2"
-            placeholder="예) /storage/emulated/0/Download/BN업무일지"
-            style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;color:#333;">
-          <button onclick="browseFolder(2)" title="폴더 선택"
-            style="width:40px;height:40px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📁</button>
+      <!-- 기본 저장 경로 (읽기전용 표시) -->
+      <div class="f-row" style="align-items:center">
+        <label style="white-space:nowrap">기본 저장 경로</label>
+        <div style="flex:1;background:#f4f6fa;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:#1B3A6B;font-weight:600;word-break:break-all">
+          <span id="defaultPathLabel">내문서\BN업무일지</span>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;">저장 시 이 폴더에 자동으로 JSON 파일이 생성됩니다.</div>
       </div>
 
-      <div style="border-top:1px solid var(--border);padding-top:12px;">
-        <button onclick="clearAllPaths()"
-          style="width:100%;padding:10px;border:1.5px solid var(--danger);border-radius:8px;background:#fff;color:var(--danger);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-          🗑️ 경로 삭제
-        </button>
+      <!-- 저장 경로 2 (선택) -->
+      <div class="f-row" style="align-items:center">
+        <label style="white-space:nowrap">저장 경로 2<br><span style="font-weight:400;font-size:11px;color:var(--muted)">(선택)</span></label>
+        <div style="display:flex;gap:6px;flex:1;align-items:center">
+          <input type="text" id="savePathInp2" placeholder="두 번째 저장 경로 입력" style="flex:1;color:#333;">
+          <button onclick="browseFolder(2)" title="폴더 선택"
+            style="width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;padding:0"
+            onmouseover="this.style.background='#dde8f8'" onmouseout="this.style.background='#f4f6fa'">📁</button>
+        </div>
+      </div>
+
+      <!-- 저장 경로 3 - 구글드라이브 (선택) -->
+      <div class="f-row" style="align-items:center">
+        <label style="white-space:nowrap">저장 경로 3<br><span style="font-weight:400;font-size:11px;color:var(--muted)">(구글드라이브)</span></label>
+        <div style="display:flex;gap:6px;flex:1;align-items:center">
+          <input type="text" id="savePathInp3" placeholder="Google Drive 폴더 경로 입력" style="flex:1;color:#333;">
+          <button onclick="browseFolder(3)" title="폴더 선택"
+            style="width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;padding:0"
+            onmouseover="this.style.background='#dde8f8'" onmouseout="this.style.background='#f4f6fa'">📁</button>
+        </div>
       </div>
 
     </div>
@@ -1084,29 +1088,41 @@ function loadDB(){
   appInit();
 }
 function saveDB(quiet=false){
-  // 항상 localStorage에 저장 (오프라인 백업)
   const dbToSave = Object.assign({}, DB, { config: Object.assign({}, DB.config, { savePath: '', savePath2: '', savePath3: '' }) });
   localStorage.setItem('bn_db2', JSON.stringify(dbToSave));
   const data = JSON.stringify(dbToSave, null, 2);
   const fname = 'BN업무일지_' + getDateStr(new Date()) + '.json';
-
-  // pywebview(EXE): 스마트폰 저장경로 1개에 자동 저장
   if(window.pywebview && window.pywebview.api){
-    const sp2 = (DB.config && DB.config.savePath2) ? DB.config.savePath2.trim() : '';
-    return window.pywebview.api.auto_save(data, fname, '', sp2, '')
-      .then(function(result){
-        if(!quiet){
-          if(result && result.ok){
-            toast('📱', sp2 ? '스마트폰에 저장 완료 ✓' : '저장 완료 ✓');
-          } else {
-            toast('⚠️', '저장 실패: ' + (result && result.err ? result.err : '경로 확인 필요'));
+    const sp = (DB.config && DB.config.savePath) ? DB.config.savePath.trim() : '';
+    const sp2Mem = (DB.config && DB.config.savePath2) ? DB.config.savePath2.trim() : '';
+    const sp3Mem = (DB.config && DB.config.savePath3) ? DB.config.savePath3.trim() : '';
+    const doSave = function(sp2Val, sp3Val){
+      return window.pywebview.api.auto_save(data, fname, sp, sp2Val, sp3Val||'')
+        .then(function(result){
+          if(!quiet){
+            if(result && result.ok){
+              const cnt = result.saved_count || 1;
+              const msg = cnt >= 3 ? '세 경로에 저장 완료 ✓'
+                        : cnt >= 2 ? '두 경로에 저장 완료 ✓'
+                        : '저장 완료: ' + result.path;
+              toast('💾', msg);
+            } else {
+              toast('⚠️', '저장 실패: ' + (result && result.err ? result.err : '경로 확인 필요'));
+            }
           }
-        }
-        return result && result.ok ? 1 : 0;
-      })
-      .catch(function(){ if(!quiet) toast('⚠️','저장 오류'); return 0; });
+          return result && result.ok ? 1 : 0;
+        })
+        .catch(function(){ if(!quiet) toast('⚠️','저장 오류'); return 0; });
+    };
+    // sp2, sp3 메모리에 있으면 바로 저장, 없으면 설정파일에서 읽어서 저장
+    const getSp2 = sp2Mem
+      ? Promise.resolve(sp2Mem)
+      : window.pywebview.api.get_save_path2().then(function(p){ if(p && !DB.config.savePath2){ if(!DB.config) DB.config={}; DB.config.savePath2=p; } return p||''; }).catch(function(){ return ''; });
+    const getSp3 = (window.pywebview.api.get_save_path3 && !sp3Mem)
+      ? window.pywebview.api.get_save_path3().then(function(p){ if(p && !DB.config.savePath3){ if(!DB.config) DB.config={}; DB.config.savePath3=p; } return p||''; }).catch(function(){ return ''; })
+      : Promise.resolve(sp3Mem);
+    return Promise.all([getSp2, getSp3]).then(function(vals){ return doSave(vals[0], vals[1]); });
   }
-  // PWA: localStorage만 저장 (파일시스템 접근 불가)
   return Promise.resolve(true);
 }
 
@@ -1725,9 +1741,11 @@ function openInNewWindow(modId, title) {
   if (modId === 'dateMod') { openDateView(); }
   else if (modId === 'statsMod') { openStats(); }
   else if (modId === 'graphMod') { openGraphMod(); }
+  else if (modId === 'exportMod') { openExport(); }
   else { openMod(modId); }
 }
 
+// touchend 완전 제거 — touch→click 이중발화로 열자마자 닫히는 버그 방지
 document.addEventListener('click', function(e){
   if(_menuSkipClose) return;
   if(!e.target.closest('.menu-item')) _closeAllMenus();
@@ -1739,7 +1757,9 @@ document.addEventListener('touchstart', function(e){
 
 function mAction(a){
   _closeAllMenus();
-  if(a==='open') doOpen();
+  if(a==='save'){ saveCurrentRows(); saveDB(false); }
+  else if(a==='saveas') doSaveAs();
+  else if(a==='open') doOpen();
 }
 
 function doSaveAs(){
@@ -2369,81 +2389,135 @@ function closeWindow(){
   saveCurrentRows(); saveDB(true);
   // toast 제거
 }
-// ── 구글 드라이브 내보내기 ────────────────────────────────────
-// 데이터를 JSON 파일로 다운로드 → 사용자가 구글 드라이브에 저장
-function exportToGoogleDrive(){
-  _closeAllMenus && _closeAllMenus();
+// ── 구글 드라이브로 공유 저장 ────────────────────────────────
+// Web Share API: Android 구글드라이브 앱으로 직접 파일 전달
+function _shareToGoogleDrive(onDone){
   saveCurrentRows();
-  const dbToSave = Object.assign({}, DB, {
-    config: Object.assign({}, DB.config, {savePath:'', savePath2:'', savePath3:''})
+  var dbToSave = Object.assign({}, DB, {
+    config: Object.assign({}, DB.config, {savePath:'',savePath2:'',savePath3:''})
   });
-  const data = JSON.stringify(dbToSave, null, 2);
-  const fname = 'BN업무일지_' + getDateStr(new Date()) + '.json';
-  const blob = new Blob([data], {type:'application/json;charset=utf-8'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = fname;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function(){
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  }, 1000);
-  toast('☁️', '구글 드라이브로 내보내기 완료!\n파일을 드라이브에 저장하세요.');
+  var data  = JSON.stringify(dbToSave, null, 2);
+  var fname = 'BN업무일지_' + getDateStr(new Date()) + '.json';
+
+  // localStorage 항상 저장 (백업)
+  localStorage.setItem('bn_db2', JSON.stringify(dbToSave));
+
+  // Web Share API 지원 여부 확인 (Android Chrome, PWA)
+  if(navigator.canShare){
+    var file = new File([data], fname, {type:'application/json'});
+    if(navigator.canShare({files:[file]})){
+      navigator.share({
+        title : 'BN 업무일지',
+        text  : fname,
+        files : [file]
+      }).then(function(){
+        toast('☁️','구글 드라이브에 저장 완료!');
+        if(onDone) onDone();
+      }).catch(function(e){
+        // 사용자가 취소한 경우 → 정상 처리
+        if(e && e.name === 'AbortError'){
+          toast('ℹ️','공유가 취소되었습니다.');
+        } else {
+          // Share API 실패 → 파일 다운로드로 폴백
+          _downloadJSON(data, fname);
+          if(onDone) onDone();
+        }
+      });
+      return;
+    }
+  }
+  // Web Share 미지원 → 파일 다운로드 (데스크탑 브라우저 등)
+  _downloadJSON(data, fname);
+  if(onDone) onDone();
 }
 
-// 닫기(저장) = 구글 드라이브 내보내기
+function _downloadJSON(data, fname){
+  var blob = new Blob([data], {type:'application/json;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+  toast('💾','파일 저장 완료! 구글 드라이브에 업로드하세요.');
+}
+
 function closeAndSave(){
   saveCurrentRows();
-  saveDB(true);           // localStorage + 스마트폰 경로 저장
-  exportToGoogleDrive();  // 구글 드라이브용 파일 다운로드
+  saveDB(true);
+  _shareToGoogleDrive(null);
 }
 function doCloseSave(){
   closeMod('closeSaveMod');
   saveCurrentRows();
   saveDB(true);
-  exportToGoogleDrive();
+  _shareToGoogleDrive(null);
 }
 
 // ============ PATH SETTINGS ============
 function openPathSettings(){
-  const cur2 = (DB.config && DB.config.savePath2) ? DB.config.savePath2 : '';
+  // 기본 경로 표시
   if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.get_save_path2().then(function(p2){
-      document.getElementById('savePathInp2').value = p2 || cur2;
-    }).catch(function(){
-      document.getElementById('savePathInp2').value = cur2;
+    window.pywebview.api.get_default_save_path().then(function(defPath){
+      const defEl = document.getElementById('defaultPathLabel');
+      if(defEl) defEl.textContent = defPath || '내문서\\BN업무일지';
     });
+    // 경로2 설정파일에서 불러오기
+    window.pywebview.api.get_save_path2().then(function(p2){
+      document.getElementById('savePathInp2').value = p2 || '';
+    });
+    // 경로3(구글드라이브) 설정파일에서 불러오기
+    if(window.pywebview.api.get_save_path3){
+      window.pywebview.api.get_save_path3().then(function(p3){
+        document.getElementById('savePathInp3').value = p3 || '';
+      });
+    } else {
+      const cur3 = (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
+      document.getElementById('savePathInp3').value = cur3;
+    }
   } else {
+    const cur2 = (DB.config && DB.config.savePath2) ? DB.config.savePath2 : '';
     document.getElementById('savePathInp2').value = cur2;
+    const cur3 = (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
+    document.getElementById('savePathInp3').value = cur3;
   }
   openMod('pathMod');
 }
 
 function browseFolder(which){
-  if(window.pywebview && window.pywebview.api){
+  if(window.pywebview){
     window.pywebview.api.select_folder().then(function(p){
-      if(p) document.getElementById('savePathInp2').value = p;
-    }).catch(function(){});
+      if(p && which===2){
+        document.getElementById('savePathInp2').value = p;
+      } else if(p && which===3){
+        document.getElementById('savePathInp3').value = p;
+      }
+    });
   }
 }
 
-function clearAllPaths(){
-  document.getElementById('savePathInp2').value = '';
-}
-
 function savePathSettings(){
-  var p2 = document.getElementById('savePathInp2').value.trim();
+  let newPath2 = document.getElementById('savePathInp2').value.trim();
+  while(newPath2.includes('\\\\')) newPath2 = newPath2.replaceAll('\\\\','\\');
+  let newPath3 = document.getElementById('savePathInp3').value.trim();
+  while(newPath3.includes('\\\\')) newPath3 = newPath3.replaceAll('\\\\','\\');
   if(!DB.config) DB.config = {};
-  DB.config.savePath2 = p2;
+  DB.config.savePath2 = newPath2;
+  DB.config.savePath3 = newPath3;
+  // 설정파일에 영구 저장
   if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.set_save_path2(p2).catch(function(){});
+    window.pywebview.api.set_save_path2(newPath2);
+    if(window.pywebview.api.set_save_path3){
+      window.pywebview.api.set_save_path3(newPath3);
+    }
   }
   saveCurrentRows();
   saveDB(true);
   closeMod('pathMod');
-  toast(p2 ? '📱' : 'ℹ️', p2 ? '저장경로 설정 완료: ' + p2.split(/[\/]/).pop() : '저장 경로가 삭제되었습니다.');
+  if(newPath2 && newPath3) toast('✅', '저장 경로 2·3 설정 완료');
+  else if(newPath2) toast('✅', '저장 경로2 설정: ' + newPath2);
+  else if(newPath3) toast('✅', '저장 경로3(구글드라이브) 설정: ' + newPath3);
+  else toast('ℹ️', '저장 경로2·3이 비워졌습니다. 기본 경로에만 저장됩니다.');
 }
 
 function openResetMod(){
@@ -3006,15 +3080,6 @@ function autoFillWorker(input) {
 }
 
 loadDB();
-
-// PWA: 뒤로가기 종료 지원
-(function(){
-  try{
-    var isPWA=(window.navigator.standalone===true)||
-              window.matchMedia('(display-mode: standalone)').matches;
-    if(isPWA && history.length<=1) history.pushState(null,'',location.href);
-  }catch(e){}
-})();
 
 // ===== PWA Service Worker =====
 if ('serviceWorker' in navigator) {
