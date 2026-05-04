@@ -94,7 +94,7 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 .menu-item{position:relative;}
 .menu-item>button{background:none;border:none;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);border-radius:5px;font-weight:500;transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
 .menu-item>button:hover,.menu-item.open>button{background:var(--bg);color:var(--primary);}
-.dropdown{display:none;position:fixed;top:0;left:0;background:#fff;border:1px solid var(--border);border-radius:8px;min-width:190px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:99999;padding:6px 0;}
+.dropdown{display:none;position:fixed;top:0;left:0;background:#fff;border:1px solid var(--border);border-radius:8px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:99999;padding:4px 0;}
 .menu-item.open .dropdown{display:block;}
 .dropdown button{display:block;width:100%;text-align:left;padding:14px 20px;min-height:46px;border:none;background:none;cursor:pointer;font-size:14px;font-family:inherit;color:var(--text);transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
 .dropdown button:hover,.dropdown button:active{background:var(--bg);color:var(--primary);}
@@ -502,7 +502,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <button class="win-btn" onclick="logout()" title="로그아웃" style="-webkit-app-region:no-drag;font-size:10px;padding:0 5px;width:auto;min-width:28px;">🚪</button>
   </div>
 
-  <!-- MENU BAR -->
+    <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
       <button onclick="toggleMenu('mf')">파일</button>
@@ -527,7 +527,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
         <button onclick="openWorkerMgr()">작업자관리</button>
         <button onclick="openAccMgmt()">계정 관리</button>
         <button onclick="openResetMod()">초기화</button>
-        <button onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -880,38 +879,44 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 <!-- PATH SETTINGS -->
 <div class="modal-overlay" id="pathMod">
-  <div class="modal" style="--mw:440px">
-    <div class="modal-head"><h3>경로저장설정</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('pathMod')">&#x2715;</button></div></div>
-    <div class="modal-body" style="gap:14px">
+  <div class="modal" style="--mw:460px">
+    <div class="modal-head"><h3>저장경로 설정</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('pathMod')">&#x2715;</button></div></div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:18px;padding:22px 20px">
 
-      <!-- 기본 저장 경로 (읽기전용 표시) -->
-      <div class="f-row" style="align-items:center">
-        <label style="white-space:nowrap">기본 저장 경로</label>
-        <div style="flex:1;background:#f4f6fa;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:#1B3A6B;font-weight:600;word-break:break-all">
-          <span id="defaultPathLabel">내문서\BN업무일지</span>
+      <!-- 스마트폰 저장소 -->
+      <div>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          📱 스마트폰 저장소
         </div>
-      </div>
-
-      <!-- 저장 경로 2 (선택) -->
-      <div class="f-row" style="align-items:center">
-        <label style="white-space:nowrap">저장 경로 2<br><span style="font-weight:400;font-size:11px;color:var(--muted)">(선택)</span></label>
-        <div style="display:flex;gap:6px;flex:1;align-items:center">
-          <input type="text" id="savePathInp2" placeholder="두 번째 저장 경로 입력" style="flex:1;color:#333;">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="savePathInp2" placeholder="예) /storage/emulated/0/Download/BN업무일지"
+            style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;color:#333;">
           <button onclick="browseFolder(2)" title="폴더 선택"
-            style="width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;padding:0"
-            onmouseover="this.style.background='#dde8f8'" onmouseout="this.style.background='#f4f6fa'">📁</button>
+            style="width:40px;height:40px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📁</button>
         </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:5px;">스마트폰 내부 저장소의 저장 폴더 경로를 입력하세요.</div>
       </div>
 
-      <!-- 저장 경로 3 - 구글드라이브 (선택) -->
-      <div class="f-row" style="align-items:center">
-        <label style="white-space:nowrap">저장 경로 3<br><span style="font-weight:400;font-size:11px;color:var(--muted)">(구글드라이브)</span></label>
-        <div style="display:flex;gap:6px;flex:1;align-items:center">
-          <input type="text" id="savePathInp3" placeholder="Google Drive 폴더 경로 입력" style="flex:1;color:#333;">
-          <button onclick="browseFolder(3)" title="폴더 선택"
-            style="width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;padding:0"
-            onmouseover="this.style.background='#dde8f8'" onmouseout="this.style.background='#f4f6fa'">📁</button>
+      <!-- 구글 드라이브 -->
+      <div>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          ☁️ 구글 드라이브 연동
         </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="savePathInp3" placeholder="예) Google Drive/BN업무일지"
+            style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;color:#333;">
+          <button onclick="browseFolder(3)" title="폴더 선택"
+            style="width:40px;height:40px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📁</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:5px;">구글 드라이브가 동기화된 폴더 경로를 입력하세요.</div>
+      </div>
+
+      <!-- 모두 삭제 버튼 -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;">
+        <button onclick="clearAllPaths()"
+          style="width:100%;padding:11px;border:1.5px solid var(--danger);border-radius:8px;background:#fff;color:var(--danger);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          🗑️ 경로 모두 삭제
+        </button>
       </div>
 
     </div>
@@ -922,7 +927,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   </div>
 </div>
 
-<!-- RESET MOD -->
+<!-- RESET MOD<!-- RESET MOD -->
 <div class="modal-overlay" id="resetMod" style="z-index:9500">
   <div class="modal" style="--mw:400px">
     <div class="modal-head"><h3>초기화</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('resetMod')">&#x2715;</button></div></div>
@@ -1709,7 +1714,6 @@ function _closeAllMenus(){
 }
 
 function _positionDropdown(id){
-  // fixed 드롭다운 좌표: 해당 버튼 바로 아래
   var target = document.getElementById(id);
   var btn = target.querySelector(':scope > button');
   var dd  = target.querySelector('.dropdown');
@@ -1718,16 +1722,16 @@ function _positionDropdown(id){
   dd.style.top  = (r.bottom + 2) + 'px';
   dd.style.left = r.left + 'px';
   // 화면 오른쪽 잘림 방지
-  setTimeout(function(){
+  requestAnimationFrame(function(){
     var ddR = dd.getBoundingClientRect();
-    if(ddR.right > window.innerWidth){
+    if(ddR.right > window.innerWidth - 4){
       dd.style.left = Math.max(4, window.innerWidth - ddR.width - 4) + 'px';
     }
-  }, 0);
+  });
 }
 
 function toggleMenu(id){
-  // 현재 클릭/터치가 document로 버블링되어 즉시 닫히지 않도록 잠금
+  // onclick이 document click으로 버블링되어 즉시 닫히는 것 방지 (50ms)
   _menuSkipClose = true;
   setTimeout(function(){ _menuSkipClose = false; }, 50);
 
@@ -1741,7 +1745,7 @@ function toggleMenu(id){
   }
 }
 
-// 메뉴 항목 실행 → 모달 열기
+// 메뉴 항목 → 모달/기능 실행
 function openInNewWindow(modId, title) {
   _closeAllMenus();
   if (modId === 'dateMod') { openDateView(); }
@@ -1751,7 +1755,7 @@ function openInNewWindow(modId, title) {
 }
 
 // 외부 클릭/터치 시 메뉴 닫기
-// ※ touchend 제거: 버튼 touchend → document touchend 순서로 버블링되어 열자마자 닫힘
+// touchend 완전 제거: 버튼 touchend→document touchend 버블링으로 열자마자 닫히는 버그
 document.addEventListener('click', function(e){
   if(_menuSkipClose) return;
   if(!e.target.closest('.menu-item')) _closeAllMenus();
@@ -2397,104 +2401,118 @@ function closeWindow(){
 }
 function closeAndSave(){
   saveCurrentRows();
-  saveDB(true).finally(function(){ _appExit(); });
+  try{
+    var p = saveDB(true);
+    if(p && typeof p.finally==='function'){ p.finally(function(){ _appExit(); }); }
+    else { setTimeout(function(){ _appExit(); }, 500); }
+  }catch(e){ _appExit(); }
 }
 function doCloseSave(){
   closeMod('closeSaveMod');
   saveCurrentRows();
-  saveDB(true).finally(function(){ _appExit(); });
+  try{
+    var p = saveDB(true);
+    if(p && typeof p.finally==='function'){ p.finally(function(){ _appExit(); }); }
+    else { setTimeout(function(){ _appExit(); }, 500); }
+  }catch(e){ _appExit(); }
 }
 
-// ── 앱 종료 함수 ───────────────────────────────────────────────
+// ── 앱 종료 함수 ──────────────────────────────────────────────
+// PWA 홈화면 앱에서 window.close()는 브라우저가 완전 차단함
+// → location.replace('about:blank') 로 화면을 비워 종료 효과
 function _appExit(){
-  // 1) pywebview 데스크톱
+  // 1) pywebview 데스크톱 앱
   if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.close_window(); return;
+    window.pywebview.api.close_window();
+    return;
   }
-  // 2) PWA 스탠드얼론 — window.close()는 브라우저가 차단
+  // 2) PWA 스탠드얼론 (홈화면 설치 앱)
   var isPWA = (window.navigator.standalone === true) ||
               window.matchMedia('(display-mode: standalone)').matches;
   if(isPWA){
     toast('💾','저장 완료!');
     setTimeout(function(){
       try{
-        // history가 있으면 전체 뒤로, 없으면 blank로 이동
         if(history.length > 1){ history.go(-(history.length)); }
         else { location.replace('about:blank'); }
       }catch(e){ location.replace('about:blank'); }
-    }, 600);
+    }, 700);
     return;
   }
-  // 3) 일반 브라우저
+  // 3) 일반 브라우저 탭
   toast('💾','저장이 완료되었습니다.');
-  setTimeout(function(){ try{ window.close(); }catch(e){} }, 300);
+  setTimeout(function(){ try{ window.close(); }catch(e){} }, 400);
 }
-// ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 
 // ============ PATH SETTINGS ============
 function openPathSettings(){
-  // 기본 경로 표시
+  // 저장된 경로 불러오기
   if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.get_default_save_path().then(function(defPath){
-      const defEl = document.getElementById('defaultPathLabel');
-      if(defEl) defEl.textContent = defPath || '내문서\\BN업무일지';
-    });
-    // 경로2 설정파일에서 불러오기
     window.pywebview.api.get_save_path2().then(function(p2){
       document.getElementById('savePathInp2').value = p2 || '';
-    });
-    // 경로3(구글드라이브) 설정파일에서 불러오기
-    if(window.pywebview.api.get_save_path3){
-      window.pywebview.api.get_save_path3().then(function(p3){
+    }).catch(function(){});
+    var gp3 = window.pywebview.api.get_save_path3 || null;
+    if(gp3){
+      gp3().then(function(p3){
         document.getElementById('savePathInp3').value = p3 || '';
-      });
+      }).catch(function(){});
     } else {
-      const cur3 = (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
-      document.getElementById('savePathInp3').value = cur3;
+      document.getElementById('savePathInp3').value =
+        (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
     }
   } else {
-    const cur2 = (DB.config && DB.config.savePath2) ? DB.config.savePath2 : '';
-    document.getElementById('savePathInp2').value = cur2;
-    const cur3 = (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
-    document.getElementById('savePathInp3').value = cur3;
+    document.getElementById('savePathInp2').value =
+      (DB.config && DB.config.savePath2) ? DB.config.savePath2 : '';
+    document.getElementById('savePathInp3').value =
+      (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
   }
   openMod('pathMod');
 }
 
 function browseFolder(which){
-  if(window.pywebview){
+  if(window.pywebview && window.pywebview.api){
     window.pywebview.api.select_folder().then(function(p){
-      if(p && which===2){
-        document.getElementById('savePathInp2').value = p;
-      } else if(p && which===3){
-        document.getElementById('savePathInp3').value = p;
-      }
-    });
+      if(!p) return;
+      if(which===2) document.getElementById('savePathInp2').value = p;
+      if(which===3) document.getElementById('savePathInp3').value = p;
+    }).catch(function(){});
+  } else {
+    // 브라우저: 직접 입력 안내
+    var id = which===2 ? 'savePathInp2' : 'savePathInp3';
+    document.getElementById(id).focus();
   }
 }
 
+function clearAllPaths(){
+  document.getElementById('savePathInp2').value = '';
+  document.getElementById('savePathInp3').value = '';
+}
+
 function savePathSettings(){
-  let newPath2 = document.getElementById('savePathInp2').value.trim();
-  while(newPath2.includes('\\\\')) newPath2 = newPath2.replaceAll('\\\\','\\');
-  let newPath3 = document.getElementById('savePathInp3').value.trim();
-  while(newPath3.includes('\\\\')) newPath3 = newPath3.replaceAll('\\\\','\\');
+  var p2 = document.getElementById('savePathInp2').value.trim();
+  var p3 = document.getElementById('savePathInp3').value.trim();
   if(!DB.config) DB.config = {};
-  DB.config.savePath2 = newPath2;
-  DB.config.savePath3 = newPath3;
-  // 설정파일에 영구 저장
+  DB.config.savePath2 = p2;
+  DB.config.savePath3 = p3;
+  // 영구 저장
   if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.set_save_path2(newPath2);
+    window.pywebview.api.set_save_path2(p2).catch(function(){});
     if(window.pywebview.api.set_save_path3){
-      window.pywebview.api.set_save_path3(newPath3);
+      window.pywebview.api.set_save_path3(p3).catch(function(){});
     }
   }
   saveCurrentRows();
   saveDB(true);
   closeMod('pathMod');
-  if(newPath2 && newPath3) toast('✅', '저장 경로 2·3 설정 완료');
-  else if(newPath2) toast('✅', '저장 경로2 설정: ' + newPath2);
-  else if(newPath3) toast('✅', '저장 경로3(구글드라이브) 설정: ' + newPath3);
-  else toast('ℹ️', '저장 경로2·3이 비워졌습니다. 기본 경로에만 저장됩니다.');
+  if(p2 || p3){
+    var msg = [];
+    if(p2) msg.push('📱 스마트폰: ' + p2.split(/[\/]/).pop());
+    if(p3) msg.push('☁️ 구글드라이브: ' + p3.split(/[\/]/).pop());
+    toast('✅', msg.join(' | '));
+  } else {
+    toast('ℹ️', '저장 경로가 비워졌습니다.');
+  }
 }
 
 function openResetMod(){
@@ -3058,7 +3076,7 @@ function autoFillWorker(input) {
 
 loadDB();
 
-// PWA: 뒤로가기 종료 지원용 history 엔트리
+// PWA: 뒤로가기 종료 지원
 (function(){
   try{
     var isPWA=(window.navigator.standalone===true)||
