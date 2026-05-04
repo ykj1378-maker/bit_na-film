@@ -505,25 +505,25 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
-      <button ontouchstart="toggleMenu('mf');event.preventDefault()" onmousedown="toggleMenu('mf')">파일</button>
+      <button ontouchstart="event.stopPropagation();toggleMenu('mf');" onmousedown="toggleMenu('mf')">파일</button>
       <div class="dropdown">
-        <button onclick="mAction('save')">저장</button>
-        <button onclick="mAction('saveas')">다른 이름으로 저장</button>
+        <button ontouchstart="event.stopPropagation()" onclick="mAction('save')">저장</button>
+        <button ontouchstart="event.stopPropagation()" onclick="mAction('saveas')">다른 이름으로 저장</button>
       </div>
     </div>
     <div class="menu-item" id="mv">
-      <button ontouchstart="toggleMenu('mv');event.preventDefault()" onmousedown="toggleMenu('mv')">보기</button>
+      <button ontouchstart="event.stopPropagation();toggleMenu('mv');" onmousedown="toggleMenu('mv')">보기</button>
       <div class="dropdown">
-        <button onclick="openDateView()">날짜</button>
+        <button ontouchstart="event.stopPropagation()" onclick="openDateView()">날짜</button>
       </div>
     </div>
     <div class="menu-item" id="ms">
-      <button ontouchstart="toggleMenu('ms');event.preventDefault()" onmousedown="toggleMenu('ms')">설정</button>
+      <button ontouchstart="event.stopPropagation();toggleMenu('ms');" onmousedown="toggleMenu('ms')">설정</button>
       <div class="dropdown">
-        <button onclick="openWorkerMgr()">작업자관리</button>
-        <button onclick="openAccMgmt()">계정 관리</button>
-        <button onclick="openResetMod()">초기화</button>
-        <button onclick="logout()">로그아웃</button>
+        <button ontouchstart="event.stopPropagation()" onclick="openWorkerMgr()">작업자관리</button>
+        <button ontouchstart="event.stopPropagation()" onclick="openAccMgmt()">계정 관리</button>
+        <button ontouchstart="event.stopPropagation()" onclick="openResetMod()">초기화</button>
+        <button ontouchstart="event.stopPropagation()" onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -1697,34 +1697,30 @@ function schedSave(){
 
 // ============ MENU ============
 // ============ MENU ============
-var _menuJustOpened = false;
-var _lastMenuToggleTime = 0;
+var _menuLocked = false;
 
 function toggleMenu(id){
-  var now = Date.now();
-  // 50ms 이내 중복 호출 무시 (touchstart→click 이중발화 방지)
-  if(now - _lastMenuToggleTime < 300) return;
-  _lastMenuToggleTime = now;
+  if(_menuLocked) return;
+  _menuLocked = true;
+  setTimeout(function(){ _menuLocked = false; }, 400);
 
   var target = document.getElementById(id);
   var wasOpen = target.classList.contains('open');
   document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
   if(!wasOpen){
     target.classList.add('open');
-    _menuJustOpened = true;
-    setTimeout(function(){ _menuJustOpened = false; }, 100);
   }
 }
 
-// 외부 탭/클릭 시 메뉴 닫기
+// 외부 탭/클릭 시 메뉴 닫기 (버블링 방지 후 처리)
 document.addEventListener('touchstart', function(e){
-  if(_menuJustOpened) return;
+  if(_menuLocked) return;
   if(!e.target.closest('.menu-item')){
     document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
   }
 }, {passive:true});
 document.addEventListener('click', function(e){
-  if(_menuJustOpened) return;
+  if(_menuLocked) return;
   if(!e.target.closest('.menu-item')){
     document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
   }
