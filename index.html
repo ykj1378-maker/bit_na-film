@@ -94,9 +94,9 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 .menu-item{position:relative;}
 .menu-item>button{background:none;border:none;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);border-radius:5px;font-weight:500;transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
 .menu-item>button:hover,.menu-item.open>button{background:var(--bg);color:var(--primary);}
-.dropdown{display:none;position:fixed;top:0;left:0;background:#fff;border:1px solid var(--border);border-radius:8px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:99999;padding:4px 0;}
+.dropdown{display:none;position:fixed;top:0;left:0;background:#fff;border:1px solid var(--border);border-radius:8px;min-width:190px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:99999;padding:6px 0;}
 .menu-item.open .dropdown{display:block;}
-.dropdown button{display:block;width:100%;text-align:left;padding:12px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
+.dropdown button{display:block;width:100%;text-align:left;padding:14px 20px;min-height:46px;border:none;background:none;cursor:pointer;font-size:14px;font-family:inherit;color:var(--text);transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
 .dropdown button:hover,.dropdown button:active{background:var(--bg);color:var(--primary);}
 
 /* TOOLBAR */
@@ -505,28 +505,29 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
-      <button ontouchend="event.stopPropagation();toggleMenu('mf');" onclick="toggleMenu('mf')">파일</button>
+      <button onclick="toggleMenu('mf')">파일</button>
       <div class="dropdown">
-        <button ontouchend="event.stopPropagation()" onclick="mAction('save')">저장</button>
-        <button ontouchend="event.stopPropagation()" onclick="mAction('saveas')">다른 이름으로 저장</button>
+        <button onclick="mAction('save')">저장</button>
+        <button onclick="mAction('saveas')">다른 이름으로 저장</button>
+        <button onclick="mAction('open')">열기</button>
       </div>
     </div>
     <div class="menu-item" id="mv">
-      <button ontouchend="event.stopPropagation();toggleMenu('mv');" onclick="toggleMenu('mv')">보기</button>
+      <button onclick="toggleMenu('mv')">보기</button>
       <div class="dropdown">
-        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('dateMod','날짜별 조회')">날짜</button>
-        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('statsMod','통계')">통계</button>
-        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('graphMod','그래프 조회')">그래프</button>
-        <button ontouchend="event.stopPropagation()" onclick="openInNewWindow('exportMod','내보내기')">내보내기</button>
+        <button onclick="openInNewWindow('dateMod','날짜별 조회')">날짜</button>
+        <button onclick="openInNewWindow('statsMod','통계')">통계</button>
+        <button onclick="openInNewWindow('graphMod','그래프 조회')">그래프</button>
+        <button onclick="openPathSettings()">저장경로 위치</button>
       </div>
     </div>
     <div class="menu-item" id="ms">
-      <button ontouchend="event.stopPropagation();toggleMenu('ms');" onclick="toggleMenu('ms')">설정</button>
+      <button onclick="toggleMenu('ms')">설정</button>
       <div class="dropdown">
-        <button ontouchend="event.stopPropagation()" onclick="openWorkerMgr()">작업자관리</button>
-        <button ontouchend="event.stopPropagation()" onclick="openAccMgmt()">계정 관리</button>
-        <button ontouchend="event.stopPropagation()" onclick="openResetMod()">초기화</button>
-        <button ontouchend="event.stopPropagation()" onclick="logout()">로그아웃</button>
+        <button onclick="openWorkerMgr()">작업자관리</button>
+        <button onclick="openAccMgmt()">계정 관리</button>
+        <button onclick="openResetMod()">초기화</button>
+        <button onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -1700,54 +1701,68 @@ function schedSave(){
 
 // ============ MENU ============
 var _menuOpenId = null;
+var _menuSkipClose = false;
 
-function toggleMenu(id){
-  var target = document.getElementById(id);
-  var wasOpen = target.classList.contains('open');
-  // 모든 메뉴 닫기
+function _closeAllMenus(){
   document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
   _menuOpenId = null;
+}
+
+function _positionDropdown(id){
+  // fixed 드롭다운 좌표: 해당 버튼 바로 아래
+  var target = document.getElementById(id);
+  var btn = target.querySelector(':scope > button');
+  var dd  = target.querySelector('.dropdown');
+  if(!btn || !dd) return;
+  var r = btn.getBoundingClientRect();
+  dd.style.top  = (r.bottom + 2) + 'px';
+  dd.style.left = r.left + 'px';
+  // 화면 오른쪽 잘림 방지
+  setTimeout(function(){
+    var ddR = dd.getBoundingClientRect();
+    if(ddR.right > window.innerWidth){
+      dd.style.left = Math.max(4, window.innerWidth - ddR.width - 4) + 'px';
+    }
+  }, 0);
+}
+
+function toggleMenu(id){
+  // 현재 클릭/터치가 document로 버블링되어 즉시 닫히지 않도록 잠금
+  _menuSkipClose = true;
+  setTimeout(function(){ _menuSkipClose = false; }, 50);
+
+  var target = document.getElementById(id);
+  var wasOpen = target.classList.contains('open');
+  _closeAllMenus();
   if(!wasOpen){
     target.classList.add('open');
     _menuOpenId = id;
-    // fixed position: 버튼 바로 아래에 dropdown 배치
-    var btn = target.querySelector('button');
-    var dd  = target.querySelector('.dropdown');
-    if(btn && dd){
-      var r = btn.getBoundingClientRect();
-      dd.style.top  = (r.bottom + 2) + 'px';
-      dd.style.left = r.left + 'px';
-    }
+    _positionDropdown(id);
   }
 }
 
-// 메뉴 항목 → 새 창으로 크게 열기
+// 메뉴 항목 실행 → 모달 열기
 function openInNewWindow(modId, title) {
-  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open'));
-  _menuOpenId = null;
+  _closeAllMenus();
   if (modId === 'dateMod') { openDateView(); }
   else if (modId === 'statsMod') { openStats(); }
   else if (modId === 'graphMod') { openGraphMod(); }
-  else if (modId === 'exportMod') { openExport(); }
   else { openMod(modId); }
 }
 
-// 외부 터치/클릭 시 메뉴 닫기
-document.addEventListener('touchend', function(e){
-  if(!e.target.closest('.menu-item')){
-    document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
-    _menuOpenId = null;
-  }
-}, {passive:true});
+// 외부 클릭/터치 시 메뉴 닫기
+// ※ touchend 제거: 버튼 touchend → document touchend 순서로 버블링되어 열자마자 닫힘
 document.addEventListener('click', function(e){
-  if(!e.target.closest('.menu-item')){
-    document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
-    _menuOpenId = null;
-  }
+  if(_menuSkipClose) return;
+  if(!e.target.closest('.menu-item')) _closeAllMenus();
 });
+document.addEventListener('touchstart', function(e){
+  if(_menuSkipClose) return;
+  if(!e.target.closest('.menu-item')) _closeAllMenus();
+}, {passive:true});
 
 function mAction(a){
-  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));
+  _closeAllMenus();
   if(a==='save'){ saveCurrentRows(); saveDB(false); }
   else if(a==='saveas') doSaveAs();
   else if(a==='open') doOpen();
@@ -2382,33 +2397,39 @@ function closeWindow(){
 }
 function closeAndSave(){
   saveCurrentRows();
-  saveDB(true).finally(function(){
-    if(window.pywebview && window.pywebview.api){
-      window.pywebview.api.close_window();
-    } else if(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches){
-      // PWA/모바일: window.close 불가 → 저장 완료 안내
-      toast('💾','저장 완료! 홈 버튼으로 나가세요.');
-    } else {
-      try{ window.close(); }catch(e){}
-      setTimeout(function(){ toast('💾','저장이 완료되었습니다.'); }, 200);
-    }
-  });
+  saveDB(true).finally(function(){ _appExit(); });
 }
 function doCloseSave(){
   closeMod('closeSaveMod');
   saveCurrentRows();
-  saveDB(true).finally(function(){
-    if(window.pywebview && window.pywebview.api){
-      window.pywebview.api.close_window();
-    } else if(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches){
-      // PWA/모바일: 창 닫기 불가 - 저장 완료 알림
-      toast('💾','저장 완료! 홈 버튼으로 닫으세요.');
-    } else {
-      try{ window.close(); }catch(e){}
-      setTimeout(function(){ toast('💾','저장이 완료되었습니다.'); }, 300);
-    }
-  });
+  saveDB(true).finally(function(){ _appExit(); });
 }
+
+// ── 앱 종료 함수 ───────────────────────────────────────────────
+function _appExit(){
+  // 1) pywebview 데스크톱
+  if(window.pywebview && window.pywebview.api){
+    window.pywebview.api.close_window(); return;
+  }
+  // 2) PWA 스탠드얼론 — window.close()는 브라우저가 차단
+  var isPWA = (window.navigator.standalone === true) ||
+              window.matchMedia('(display-mode: standalone)').matches;
+  if(isPWA){
+    toast('💾','저장 완료!');
+    setTimeout(function(){
+      try{
+        // history가 있으면 전체 뒤로, 없으면 blank로 이동
+        if(history.length > 1){ history.go(-(history.length)); }
+        else { location.replace('about:blank'); }
+      }catch(e){ location.replace('about:blank'); }
+    }, 600);
+    return;
+  }
+  // 3) 일반 브라우저
+  toast('💾','저장이 완료되었습니다.');
+  setTimeout(function(){ try{ window.close(); }catch(e){} }, 300);
+}
+// ──────────────────────────────────────────────────────────────
 
 // ============ PATH SETTINGS ============
 function openPathSettings(){
@@ -3036,6 +3057,15 @@ function autoFillWorker(input) {
 }
 
 loadDB();
+
+// PWA: 뒤로가기 종료 지원용 history 엔트리
+(function(){
+  try{
+    var isPWA=(window.navigator.standalone===true)||
+              window.matchMedia('(display-mode: standalone)').matches;
+    if(isPWA && history.length<=1) history.pushState(null,'',location.href);
+  }catch(e){}
+})();
 
 // ===== PWA Service Worker =====
 if ('serviceWorker' in navigator) {
