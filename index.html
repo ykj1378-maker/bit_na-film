@@ -505,20 +505,20 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
-      <button onclick="toggleMenu('mf')" ontouchstart="toggleMenu('mf');event.preventDefault()">파일</button>
+      <button ontouchstart="toggleMenu('mf');event.preventDefault()" onmousedown="toggleMenu('mf')">파일</button>
       <div class="dropdown">
         <button onclick="mAction('save')">저장</button>
         <button onclick="mAction('saveas')">다른 이름으로 저장</button>
       </div>
     </div>
     <div class="menu-item" id="mv">
-      <button onclick="toggleMenu('mv')" ontouchstart="toggleMenu('mv');event.preventDefault()">보기</button>
+      <button ontouchstart="toggleMenu('mv');event.preventDefault()" onmousedown="toggleMenu('mv')">보기</button>
       <div class="dropdown">
         <button onclick="openDateView()">날짜</button>
       </div>
     </div>
     <div class="menu-item" id="ms">
-      <button onclick="toggleMenu('ms')" ontouchstart="toggleMenu('ms');event.preventDefault()">설정</button>
+      <button ontouchstart="toggleMenu('ms');event.preventDefault()" onmousedown="toggleMenu('ms')">설정</button>
       <div class="dropdown">
         <button onclick="openWorkerMgr()">작업자관리</button>
         <button onclick="openAccMgmt()">계정 관리</button>
@@ -1703,7 +1703,7 @@ var _lastMenuToggleTime = 0;
 function toggleMenu(id){
   var now = Date.now();
   // 50ms 이내 중복 호출 무시 (touchstart→click 이중발화 방지)
-  if(now - _lastMenuToggleTime < 50) return;
+  if(now - _lastMenuToggleTime < 300) return;
   _lastMenuToggleTime = now;
 
   var target = document.getElementById(id);
