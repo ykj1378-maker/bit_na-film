@@ -27,6 +27,10 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
   align-items:center;justify-content:center;
   padding-top:var(--safe-top);
 }
+#loginOverlay.hidden{
+  display:none !important;
+  pointer-events:none !important;
+}
 .login-box{
   background:#fff;
   border-radius:16px;
@@ -88,12 +92,12 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 /* MENU */
 .menu-bar{background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;height:36px;gap:2px;position:relative;z-index:200;flex-shrink:0;}
 .menu-item{position:relative;}
-.menu-item>button{background:none;border:none;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);border-radius:5px;font-weight:500;transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.1);}
+.menu-item>button{background:none;border:none;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);border-radius:5px;font-weight:500;transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
 .menu-item>button:hover,.menu-item.open>button{background:var(--bg);color:var(--primary);}
-.dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid var(--border);border-radius:8px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:300;padding:4px 0;}
+.dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid var(--border);border-radius:8px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:9999;padding:4px 0;}
 .menu-item.open .dropdown{display:block;}
-.dropdown button{display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.1);}
-.dropdown button:hover{background:var(--bg);color:var(--primary);}
+.dropdown button{display:block;width:100%;text-align:left;padding:12px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
+.dropdown button:hover,.dropdown button:active{background:var(--bg);color:var(--primary);}
 
 /* TOOLBAR */
 .toolbar{background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:6px 14px;gap:8px;flex-shrink:0;flex-wrap:wrap;}
@@ -1166,7 +1170,7 @@ function doLogin(){
     } else {
       localStorage.removeItem('bn_auto_login');
     }
-    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('loginOverlay').classList.add('hidden');
   } else {
     err.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
   }
@@ -1196,7 +1200,7 @@ function checkLogin(){
         if(pwEl)  pwEl.value  = apw;
         if(autoChk) autoChk.checked = true;
         if(saveChk) saveChk.checked = true;
-        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('loginOverlay').classList.add('hidden');
         return;
       } else {
         // 저장된 계정 정보가 맞지 않으면 자동로그인 삭제
@@ -1214,7 +1218,7 @@ function checkLogin(){
 }
 
 function logout(){
-  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('loginOverlay').classList.remove('hidden');
   const savedId = localStorage.getItem('bn_saved_id');
   const lidEl = document.getElementById('lid');
   const chkEl = document.getElementById('saveIdChk');
@@ -1698,41 +1702,19 @@ function schedSave(){
 
 // ============ MENU ============
 // ============ MENU ============
-// 모바일에서 touchstart→click 이중 발화 방지
-var _menuTouchHandled = false;
-
 function toggleMenu(id){
-  // 터치 이벤트 후 click 이중 발화 방지
-  if(_menuTouchHandled){ _menuTouchHandled = false; return; }
-  var items = document.querySelectorAll('.menu-item');
   var target = document.getElementById(id);
   var wasOpen = target.classList.contains('open');
-  items.forEach(function(m){ m.classList.remove('open'); });
+  document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
   if(!wasOpen) target.classList.add('open');
 }
 
-// 메뉴 버튼에 터치 이벤트 직접 바인딩 (이중발화 방지 포함)
-document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('.menu-item > button').forEach(function(btn){
-    btn.addEventListener('touchend', function(e){
-      e.preventDefault(); // click 이벤트 억제
-      var id = btn.closest('.menu-item').id;
-      var items = document.querySelectorAll('.menu-item');
-      var target = document.getElementById(id);
-      var wasOpen = target.classList.contains('open');
-      items.forEach(function(m){ m.classList.remove('open'); });
-      if(!wasOpen) target.classList.add('open');
-    }, {passive: false});
-  });
-});
-
-// 외부 클릭/터치 시 메뉴 닫기
+// 외부 클릭 시 메뉴 닫기 (click만 사용 - 모바일도 click 발생함)
 document.addEventListener('click', function(e){
-  if(!e.target.closest('.menu-item')) document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+  if(!e.target.closest('.menu-item')){
+    document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
+  }
 });
-document.addEventListener('touchstart', function(e){
-  if(!e.target.closest('.menu-item')) document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
-}, {passive: true});
 
 function mAction(a){
   document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));
