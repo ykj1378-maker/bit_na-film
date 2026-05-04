@@ -1700,7 +1700,7 @@ function schedSave(){
 
 // ============ MENU ============
 var _menuOpenId = null;
-var _menuLock = false;  // touch→click 이중발화 방지
+var _menuLock = false;
 
 function _closeAllMenus(){
   document.querySelectorAll('.menu-item').forEach(function(m){ m.classList.remove('open'); });
@@ -1708,6 +1708,7 @@ function _closeAllMenus(){
 }
 
 function toggleMenu(id){
+  // 잠금: 스마트폰에서 touch→click 이중 발화 방지 (400ms)
   if(_menuLock) return;
   _menuLock = true;
   setTimeout(function(){ _menuLock = false; }, 400);
@@ -1731,7 +1732,9 @@ function openInNewWindow(modId, title) {
   else { openMod(modId); }
 }
 
-// 외부 클릭 시 메뉴 닫기 (touchend 제거 — touch후 click이 자동 발생하므로 불필요)
+// 외부 클릭 시 메뉴 닫기
+// ※ touchend 리스너 제거 — touch 후 자동으로 click 이벤트가 발생하므로 불필요
+//   touchend를 쓰면 toggleMenu(열기)와 동시 발화해 즉시 닫히는 버그 발생
 document.addEventListener('click', function(e){
   if(!e.target.closest('.menu-item')){
     _closeAllMenus();
@@ -2382,36 +2385,30 @@ function doCloseSave(){
   saveDB(true).finally(function(){ _appExit(); });
 }
 
-// ── 앱 종료 함수 ──────────────────────────────────────────────────
-// PWA(홈화면 설치)에서 window.close()는 브라우저가 차단함.
-// history 조작으로 앱 화면을 벗어나는 방식으로 대체.
+// ── 앱 종료 통합 함수 ──────────────────────────────────
+// PWA(홈화면 설치앱)에서 window.close()는 브라우저가 차단함
+// → location.replace로 화면을 비워 종료 효과를 냄
 function _appExit(){
-  // 케이스 1: pywebview 데스크톱 앱
-  if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.close_window();
-    return;
-  }
-  // 케이스 2: PWA 스탠드얼론
-  var isPWA = (window.navigator.standalone === true) ||
-              (window.matchMedia('(display-mode: standalone)').matches);
-  if(isPWA){
-    toast('💾','저장 완료!');
-    setTimeout(function(){
-      // history가 쌓인 경우 전체 뒤로가기
-      if(history.length > 1){
-        history.go(-(history.length));
-      } else {
-        // history가 없으면 about:blank 로 이동 (화면을 비움)
-        location.replace('about:blank');
-      }
-    }, 800);
-    return;
-  }
-  // 케이스 3: 일반 브라우저 탭
-  try{ window.close(); }catch(e){}
-  toast('💾','저장이 완료되었습니다.');
+  toast('💾','저장 완료!');
+  setTimeout(function(){
+    // 1) pywebview 데스크톱
+    if(window.pywebview && window.pywebview.api){
+      window.pywebview.api.close_window(); return;
+    }
+    // 2) PWA 스탠드얼론
+    var isPWA = (window.navigator.standalone === true) ||
+                (window.matchMedia('(display-mode: standalone)').matches);
+    if(isPWA){
+      // history가 있으면 전부 뒤로, 없으면 blank로 이동
+      if(history.length > 1){ history.go(-(history.length)); }
+      else { location.replace('about:blank'); }
+      return;
+    }
+    // 3) 일반 브라우저 탭
+    try{ window.close(); }catch(e){}
+  }, 700);
 }
-// ─────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────
 
 // ============ PATH SETTINGS ============
 function openPathSettings(){
@@ -3040,16 +3037,15 @@ function autoFillWorker(input) {
 
 loadDB();
 
-// PWA 설치 앱: history 엔트리 추가 → 뒤로가기로 종료 가능
+
+// PWA 홈화면 앱: history 엔트리 추가 (뒤로가기 종료 지원)
 (function(){
   try{
-    var isPWA = (window.navigator.standalone === true) ||
-                (window.matchMedia('(display-mode: standalone)').matches);
-    if(isPWA){ history.pushState(null,'',location.href); }
+    var isPWA=(window.navigator.standalone===true)||
+              (window.matchMedia('(display-mode: standalone)').matches);
+    if(isPWA && history.length <= 1){ history.pushState(null,'',location.href); }
   }catch(e){}
 })();
-
-
 // ===== PWA Service Worker =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
