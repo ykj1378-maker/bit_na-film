@@ -482,8 +482,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     </div>
     <div class="login-field"><input type="password" id="lpw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div style="display:flex;align-items:center;gap:7px;padding:0 36px 16px;">
-      <input type="checkbox" id="autoLoginChk" style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;">
-      <label for="autoLoginChk" style="font-size:12px;color:var(--muted);cursor:pointer;user-select:none;">자동 로그인</label>
+      <input type="checkbox" id="savePwChk" style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;">
+      <label for="savePwChk" style="font-size:12px;color:var(--muted);cursor:pointer;user-select:none;">비밀번호 저장</label>
     </div>
     <div class="login-btnwrap"><button class="login-btn" onclick="doLogin()" ontouchend="event.preventDefault();doLogin()">로 그 인</button></div>
     <div class="login-err" id="lerr"></div>
@@ -515,6 +515,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       <button onclick="toggleMenu('mv')">보기</button>
       <div class="dropdown">
         <button onclick="openDateView()">날짜</button>
+      </div>
+    </div>
+    <div class="menu-item" id="ms">
+      <button onclick="toggleMenu('ms')">설정</button>
+      <div class="dropdown">
+        <button onclick="openWorkerMgr()">작업자관리</button>
+        <button onclick="openAccMgmt()">계정 관리</button>
+        <button onclick="openResetMod()">초기화</button>
+        <button onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -709,12 +718,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 <!-- DATE VIEW -->
 <div class="modal-overlay" id="dateMod">
   <div class="modal" style="--mw:700px">
-    <div class="modal-head"><h3>날짜별 조회</h3><div class="modal-head-btns"><button class="mh-btn" onclick="minMod('dateMod')">─</button><button class="mh-btn" onclick="maxMod('dateMod')">□</button><button class="mh-btn mx" onclick="closeMod('dateMod')">✕</button></div></div>
-    <div class="modal-body">
-      <div class="f-row" style="margin-bottom:16px"><label>날짜 선택</label><input type="date" id="dvDate" onchange="loadDateView()"></div>
-      <div id="dvResult"></div>
-    </div>
-    <div class="modal-foot"><button class="btn btn-s" onclick="closeMod('dateMod')">닫기</button></div>
+    <div class="modal-foot" style="justify-content:center;padding:20px;"><button class="btn btn-s" onclick="closeMod('dateMod')">닫기</button></div>
   </div>
 </div>
 
@@ -1150,12 +1154,12 @@ function doLogin(){
     } else {
       localStorage.removeItem('bn_saved_id');
     }
-    // 자동 로그인 처리
-    const autoChk = document.getElementById('autoLoginChk');
-    if(autoChk && autoChk.checked){
-      localStorage.setItem('bn_auto_login', id + '|' + pw);
+    // 비밀번호 저장 처리
+    const savePwChk = document.getElementById('savePwChk');
+    if(savePwChk && savePwChk.checked){
+      localStorage.setItem('bn_saved_pw', id + '|' + pw);
     } else {
-      localStorage.removeItem('bn_auto_login');
+      localStorage.removeItem('bn_saved_pw');
     }
     document.getElementById('loginOverlay').classList.add('hidden');
   } else {
@@ -1169,31 +1173,23 @@ function checkLogin(){
     DB.accounts = [{id:'ykj1378', pw:'dbsrudwls0!'}];
     saveDB(true);
   }
-  // 자동 로그인 확인
-  const autoLogin = localStorage.getItem('bn_auto_login');
-  if(autoLogin){
-    const parts = autoLogin.split('|');
+  // 비밀번호 저장 확인 (저장된 경우 입력 필드에 자동 입력)
+  const savedPw = localStorage.getItem('bn_saved_pw');
+  if(savedPw){
+    const parts = savedPw.split('|');
     if(parts.length >= 2){
-      const aid = parts[0];
-      // '|'가 비밀번호에 포함될 수 있으므로 첫 번째 이후 전부를 pw로
-      const apw = parts.slice(1).join('|');
-      const match = DB.accounts.find(a => a.id === aid && a.pw === apw);
-      if(match){
-        const lidEl  = document.getElementById('lid');
-        const pwEl   = document.getElementById('lpw');
-        const autoChk = document.getElementById('autoLoginChk');
-        const saveChk = document.getElementById('saveIdChk');
-        if(lidEl) lidEl.value = aid;
-        if(pwEl)  pwEl.value  = apw;
-        if(autoChk) autoChk.checked = true;
-        if(saveChk) saveChk.checked = true;
-        document.getElementById('loginOverlay').classList.add('hidden');
-        return;
-      } else {
-        // 저장된 계정 정보가 맞지 않으면 자동로그인 삭제
-        localStorage.removeItem('bn_auto_login');
-      }
+      const sid = parts[0];
+      const spw = parts.slice(1).join('|');
+      const lidEl = document.getElementById('lid');
+      const pwEl  = document.getElementById('lpw');
+      const savePwChk = document.getElementById('savePwChk');
+      const saveIdChk = document.getElementById('saveIdChk');
+      if(lidEl) lidEl.value = sid;
+      if(pwEl)  pwEl.value  = spw;
+      if(savePwChk) savePwChk.checked = true;
+      if(saveIdChk) saveIdChk.checked = true;
     }
+    return;
   }
   const savedId = localStorage.getItem('bn_saved_id');
   if(savedId){
@@ -1207,14 +1203,22 @@ function checkLogin(){
 function logout(){
   document.getElementById('loginOverlay').classList.remove('hidden');
   const savedId = localStorage.getItem('bn_saved_id');
+  const savedPw = localStorage.getItem('bn_saved_pw');
   const lidEl = document.getElementById('lid');
-  const chkEl = document.getElementById('saveIdChk');
-  const autoChk = document.getElementById('autoLoginChk');
+  const pwEl  = document.getElementById('lpw');
+  const saveIdChk = document.getElementById('saveIdChk');
+  const savePwChk = document.getElementById('savePwChk');
   if(savedId && lidEl) lidEl.value = savedId;
   else if(lidEl) lidEl.value = '';
-  if(chkEl) chkEl.checked = !!savedId;
-  if(autoChk) autoChk.checked = false;
-  document.getElementById('lpw').value = '';
+  if(savedPw){
+    const parts = savedPw.split('|');
+    if(pwEl && parts.length >= 2) pwEl.value = parts.slice(1).join('|');
+    if(savePwChk) savePwChk.checked = true;
+  } else {
+    if(pwEl) pwEl.value = '';
+    if(savePwChk) savePwChk.checked = false;
+  }
+  if(saveIdChk) saveIdChk.checked = !!savedId;
   document.getElementById('lerr').textContent = '';
 }
 
