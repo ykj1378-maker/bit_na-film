@@ -465,7 +465,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
-
 const firebaseConfig = {
   apiKey:            "AIzaSyARK0Ku1EZDgzPV1F0JZKWmQ0jMDfBysqM",
   authDomain:        "bitna-17ed3.firebaseapp.com",
@@ -474,42 +473,25 @@ const firebaseConfig = {
   messagingSenderId: "798709646035",
   appId:             "1:798709646035:web:dd06dd5b66a339cd894a26"
 };
-
 const _fbApp = initializeApp(firebaseConfig);
 const _db    = getFirestore(_fbApp);
-const _DOC   = "bn_worklog_main";  // Firestore 문서 ID (고정)
-
-// Firestore에 저장
-window._fbSave = async function(dataObj) {
-  try {
-    const ref = doc(_db, "bn_data", _DOC);
-    await setDoc(ref, {
-      payload:   JSON.stringify(dataObj),
+const _DOC   = "bn_worklog_main";
+window._fbSave = async function(obj){
+  try{
+    await setDoc(doc(_db,"bn_data",_DOC),{
+      payload: JSON.stringify(obj),
       updatedAt: new Date().toISOString()
     });
     return true;
-  } catch(e) {
-    console.warn("[Firebase] 저장 실패:", e.message);
-    return false;
-  }
+  }catch(e){ console.warn("[FB] 저장실패:",e.message); return false; }
 };
-
-// Firestore에서 로드
-window._fbLoad = async function() {
-  try {
-    const ref  = doc(_db, "bn_data", _DOC);
-    const snap = await getDoc(ref);
-    if(snap.exists()) {
-      const raw = snap.data().payload;
-      return raw ? JSON.parse(raw) : null;
-    }
+window._fbLoad = async function(){
+  try{
+    const snap = await getDoc(doc(_db,"bn_data",_DOC));
+    if(snap.exists()){ const r=snap.data().payload; return r?JSON.parse(r):null; }
     return null;
-  } catch(e) {
-    console.warn("[Firebase] 로드 실패:", e.message);
-    return null;
-  }
+  }catch(e){ console.warn("[FB] 로드실패:",e.message); return null; }
 };
-
 window._fbReady = true;
 console.log("[Firebase] 연결 완료 ✓");
 </script>
@@ -555,13 +537,13 @@ console.log("[Firebase] 연결 완료 ✓");
     <button class="win-btn" onclick="logout()" title="로그아웃" style="-webkit-app-region:no-drag;font-size:10px;padding:0 5px;width:auto;min-width:28px;">🚪</button>
   </div>
 
-  <!-- MENU BAR -->
+    <!-- MENU BAR -->
   <div class="menu-bar">
     <div class="menu-item" id="mf">
       <button onclick="toggleMenu('mf')">파일</button>
       <div class="dropdown">
         <button onclick="mAction('save')">저장</button>
-        <button onclick="mAction('saveas')">다른 이름으로 저장</button>
+        <button onclick="mAction('download')">파일 다운로드</button>
       </div>
     </div>
     <div class="menu-item" id="mv">
@@ -570,7 +552,6 @@ console.log("[Firebase] 연결 완료 ✓");
         <button onclick="openInNewWindow('dateMod','날짜별 조회')">날짜</button>
         <button onclick="openInNewWindow('statsMod','통계')">통계</button>
         <button onclick="openInNewWindow('graphMod','그래프 조회')">그래프</button>
-        <button onclick="openInNewWindow('exportMod','내보내기')">내보내기</button>
       </div>
     </div>
     <div class="menu-item" id="ms">
@@ -579,7 +560,6 @@ console.log("[Firebase] 연결 완료 ✓");
         <button onclick="openWorkerMgr()">작업자관리</button>
         <button onclick="openAccMgmt()">계정 관리</button>
         <button onclick="openResetMod()">초기화</button>
-        <button onclick="logout()">로그아웃</button>
       </div>
     </div>
   </div>
@@ -1082,41 +1062,36 @@ function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
 function loadDB(){
-  // 1) localStorage에서 우선 로드 (빠른 초기화)
+  // 1) localStorage 우선 로드
   try{
-    const s=localStorage.getItem('bn_db2');
-    if(s){
-      const parsed=JSON.parse(s);
-      if(parsed && parsed.config) parsed.config.savePath='';
-      const prevAccounts = DB.accounts;
-      Object.assign(DB, parsed);
-      DB.accounts = prevAccounts;
+    const raw=localStorage.getItem('bn_db2');
+    if(raw){
+      const parsed=JSON.parse(raw);
+      if(parsed&&parsed.config) parsed.config.savePath='';
+      const prev=DB.accounts;
+      Object.assign(DB,parsed);
+      DB.accounts=prev;
     }
   }catch(e){}
-
-  // 2) Firestore에서 최신 데이터 로드 (클라우드 우선)
-  function _loadFromFirestore(){
-    if(!window._fbReady || !window._fbLoad) return;
-    window._fbLoad().then(function(cloudData){
-      if(!cloudData) return;
-      // 클라우드 데이터가 로컬보다 최신이면 덮어씀
-      const localTime  = DB.config && DB.config._savedAt ? new Date(DB.config._savedAt) : new Date(0);
-      const cloudTime  = cloudData.config && cloudData.config._savedAt ? new Date(cloudData.config._savedAt) : new Date(0);
-      if(cloudTime >= localTime){
-        const prevAccounts = DB.accounts;
-        if(cloudData.config) cloudData.config.savePath = '';
-        Object.assign(DB, cloudData);
-        DB.accounts = prevAccounts;
-        localStorage.setItem('bn_db2', JSON.stringify(DB));
-        loadTodayRows();
-        calcSummary();
-        console.log('[Firebase] 클라우드 데이터 로드 완료 ✓');
+  // 2) Firestore 최신 데이터 동기화
+  function _sync(){
+    if(!window._fbReady||!window._fbLoad) return;
+    window._fbLoad().then(function(cloud){
+      if(!cloud) return;
+      const lt=DB.config&&DB.config._savedAt?new Date(DB.config._savedAt):new Date(0);
+      const ct=cloud.config&&cloud.config._savedAt?new Date(cloud.config._savedAt):new Date(0);
+      if(ct>=lt){
+        const prev=DB.accounts;
+        if(cloud.config) cloud.config.savePath='';
+        Object.assign(DB,cloud);
+        DB.accounts=prev;
+        localStorage.setItem('bn_db2',JSON.stringify(DB));
+        loadTodayRows(); calcSummary();
+        console.log('[FB] 동기화 완료 ✓');
       }
-    }).catch(function(e){ console.warn('[Firebase] 로드 실패:', e); });
+    }).catch(function(){});
   }
-  // Firebase 준비될 때까지 잠시 대기
-  if(window._fbReady){ _loadFromFirestore(); }
-  else { setTimeout(_loadFromFirestore, 1500); }
+  if(window._fbReady){ _sync(); } else { setTimeout(_sync,1500); }
   // 2) pywebview: 계정 먼저 로드 완료 후 업무 데이터 로드 (순서 보장)
   if(window.pywebview && window.pywebview.api){
     // ① 계정 파일 로드 완료 후 ② 업무 데이터 로드 (then 체인으로 순서 보장)
@@ -1165,36 +1140,25 @@ function loadDB(){
   appInit();
 }
 function saveDB(quiet=false){
-  // 1) 항상 localStorage 저장 (오프라인 백업)
-  const dbToSave = Object.assign({}, DB, {
-    config: Object.assign({}, DB.config, {savePath:'', savePath2:'', savePath3:''})
+  if(!DB.config) DB.config={};
+  DB.config._savedAt = new Date().toISOString();
+  const dbToSave = Object.assign({},DB,{
+    config: Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})
   });
+  // 1) localStorage 항상 저장
   localStorage.setItem('bn_db2', JSON.stringify(dbToSave));
-
-  // 2) Firestore 자동 저장 (PWA 클라우드 동기화)
+  // 2) Firestore 클라우드 자동 저장
   if(window._fbReady && window._fbSave){
     window._fbSave(dbToSave).then(function(ok){
-      if(!quiet){
-        toast(ok ? '☁️' : '⚠️', ok ? '클라우드 저장 완료 ✓' : '클라우드 저장 실패');
-      }
+      if(!quiet) toast(ok?'☁️':'⚠️', ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
     });
   }
-
-  // 3) pywebview(EXE): 스마트폰/데스크탑 경로 저장
+  // 3) pywebview EXE
   if(window.pywebview && window.pywebview.api){
-    const data  = JSON.stringify(dbToSave, null, 2);
-    const fname = 'BN업무일지_' + getDateStr(new Date()) + '.json';
-    const sp    = (DB.config && DB.config.savePath)  ? DB.config.savePath.trim()  : '';
-    const sp2   = (DB.config && DB.config.savePath2) ? DB.config.savePath2.trim() : '';
-    const sp3   = (DB.config && DB.config.savePath3) ? DB.config.savePath3.trim() : '';
-    return window.pywebview.api.auto_save(data, fname, sp, sp2, sp3)
-      .then(function(result){
-        if(!quiet && result && result.ok){
-          toast('💾', '저장 완료 ✓');
-        }
-        return result && result.ok ? 1 : 0;
-      })
-      .catch(function(){ return 0; });
+    const data=JSON.stringify(dbToSave,null,2);
+    const fname='BN업무일지_'+getDateStr(new Date())+'.json';
+    return window.pywebview.api.auto_save(data,fname,'','','')
+      .then(function(r){ return r&&r.ok?1:0; }).catch(function(){ return 0; });
   }
   return Promise.resolve(true);
 }
@@ -1548,9 +1512,6 @@ function delRow(btn){
 }
 
 function saveCurrentRows(){
-  // 저장 시각 기록 (Firestore 최신 데이터 판별용)
-  if(!DB.config) DB.config = {};
-  DB.config._savedAt = new Date().toISOString();
   const rows=document.getElementById('tbody').rows;
   const data=[];
   for(const tr of rows){
@@ -1817,10 +1778,10 @@ function openInNewWindow(modId, title) {
   if (modId === 'dateMod') { openDateView(); }
   else if (modId === 'statsMod') { openStats(); }
   else if (modId === 'graphMod') { openGraphMod(); }
-  else if (modId === 'exportMod') { openExport(); }
   else { openMod(modId); }
 }
 
+// touchend 완전 제거: 열자마자 닫히는 버그 방지
 document.addEventListener('click', function(e){
   if(_menuSkipClose) return;
   if(!e.target.closest('.menu-item')) _closeAllMenus();
@@ -1833,8 +1794,22 @@ document.addEventListener('touchstart', function(e){
 function mAction(a){
   _closeAllMenus();
   if(a==='save'){ saveCurrentRows(); saveDB(false); }
-  else if(a==='saveas') doSaveAs();
+  else if(a==='download'){ _dlCurrentData(); }
   else if(a==='open') doOpen();
+}
+
+// 파일 다운로드
+function _dlCurrentData(){
+  saveCurrentRows();
+  var dbToSave = Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
+  var data  = JSON.stringify(dbToSave, null, 2);
+  var fname = 'BN업무일지_' + getDateStr(new Date()) + '.json';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data],{type:'application/json'}));
+  a.download = fname;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 1000);
+  toast('💾','파일 다운로드 완료!');
 }
 
 function doSaveAs(){
@@ -2466,56 +2441,37 @@ function closeWindow(){
 }
 function closeAndSave(){
   saveCurrentRows();
-  // Firestore + localStorage 저장 후 Web Share
   saveDB(true).finally(function(){
-    if(window.pywebview && window.pywebview.api){
-      window.pywebview.api.close_window();
-    } else {
-      _shareFile();
-    }
+    _appClose();
   });
 }
 function doCloseSave(){
   closeMod('closeSaveMod');
   saveCurrentRows();
   saveDB(true).finally(function(){
+    _appClose();
+  });
+}
+
+// ── 저장 후 창 닫기 ────────────────────────────────────────────
+function _appClose(){
+  toast('☁️','저장 완료!');
+  setTimeout(function(){
+    // 1) pywebview 데스크탑 EXE
     if(window.pywebview && window.pywebview.api){
-      window.pywebview.api.close_window();
-    } else {
-      _shareFile();
+      window.pywebview.api.close_window(); return;
     }
-  });
-}
-
-// ── 파일 공유 (구글드라이브 앱으로 직접 저장) ──────────────────
-function _shareFile(){
-  const dbToSave = Object.assign({}, DB, {
-    config: Object.assign({}, DB.config, {savePath:'',savePath2:'',savePath3:''})
-  });
-  const data  = JSON.stringify(dbToSave, null, 2);
-  const fname = 'BN업무일지_' + getDateStr(new Date()) + '.json';
-  const file  = new File([data], fname, {type:'application/json'});
-
-  // Web Share API - 구글드라이브 앱으로 직접 공유
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    navigator.share({title:'BN 업무일지', files:[file]})
-      .then(function(){ toast('☁️','구글 드라이브에 저장하세요!'); })
-      .catch(function(e){
-        if(e && e.name !== 'AbortError') _downloadFile(data, fname);
-      });
-  } else {
-    _downloadFile(data, fname);
-  }
-}
-
-function _downloadFile(data, fname){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([data],{type:'application/json'}));
-  a.download = fname;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 1000);
-  toast('💾','파일 저장 완료!');
+    // 2) PWA 설치 앱 (홈화면)
+    var isPWA = (window.navigator.standalone === true) ||
+                window.matchMedia('(display-mode: standalone)').matches;
+    if(isPWA){
+      if(history.length > 1){ history.go(-history.length); }
+      else { location.replace('about:blank'); }
+      return;
+    }
+    // 3) 일반 브라우저 탭
+    try{ window.close(); }catch(e){}
+  }, 700);
 }
 
 // ============ PATH SETTINGS ============
@@ -3144,6 +3100,15 @@ function autoFillWorker(input) {
 }
 
 loadDB();
+
+// PWA 뒤로가기 종료 지원
+(function(){
+  try{
+    var isPWA=(window.navigator.standalone===true)||
+              window.matchMedia('(display-mode: standalone)').matches;
+    if(isPWA&&history.length<=1) history.pushState(null,'',location.href);
+  }catch(e){}
+})();
 
 // ===== PWA Service Worker =====
 if ('serviceWorker' in navigator) {
