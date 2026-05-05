@@ -2879,26 +2879,8 @@ function closeAndSave(){saveCurrentRows();saveDB(true).finally(function(){_appCl
 function doCloseSave(){closeMod('closeSaveMod');saveCurrentRows();saveDB(true).finally(function(){_appClose();});}
 function _appClose(){
   toast('☁️','저장 완료!');
-  setTimeout(function(){
-    // pywebview (PC 데스크탑 앱)
-    if(window.pywebview&&window.pywebview.api){
-      window.pywebview.api.close_window();
-      return;
-    }
-    // PWA (스마트폰 홈화면 앱)
-    var isPWA=(window.navigator.standalone===true)||window.matchMedia('(display-mode: standalone)').matches;
-    if(isPWA){
-      try{window.close();}catch(e){}
-      setTimeout(function(){location.replace('about:blank');},200);
-      return;
-    }
-    // 일반 브라우저
-    try{
-      window.open('','_self').close();
-    }catch(e){
-      try{window.close();}catch(e2){}
-    }
-  },700);
+  // 저장 후 로그인 화면으로 복귀 (PC·모바일 공통)
+  setTimeout(function(){ logout(); },700);
 }
 
 // ============ PATH SETTINGS ============
