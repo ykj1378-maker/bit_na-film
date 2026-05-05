@@ -1386,9 +1386,12 @@ function openMobileFullscreen(type){
     const clone = src.cloneNode(true);
     clone.style.cssText = 'display:block;width:100%;padding:0;border:none;flex:1;overflow-y:auto;';
     clone.querySelector('.sum-panel-title') && (clone.querySelector('.sum-panel-title').style.display='none');
-    // sum-panel-body에 padding-top 추가해서 총인원 제목 잘림 방지
+    // sum-panel-body padding-top을 헤더 높이(약 56px)만큼 확보
     const cloneBody = clone.querySelector('.sum-panel-body');
-    if(cloneBody) cloneBody.style.paddingTop = '16px';
+    if(cloneBody) cloneBody.style.paddingTop = '20px';
+    // 총인원 첫 번째 섹션에 margin-top 추가
+    const firstSection = cloneBody && cloneBody.querySelector('.sum-section-head');
+    if(firstSection) firstSection.style.marginTop = '4px';
     content.appendChild(clone);
     // 닫기 버튼 헤더를 mfsSummary 상단에 표시 (이미 HTML에 존재)
     document.getElementById('mfsSummary').classList.add('active');
@@ -3511,7 +3514,7 @@ if ('serviceWorker' in navigator) {
 
 <!-- 모바일 전체창: 요약 -->
 <div class="mobile-fullscreen" id="mfsSummary">
-  <div class="mfs-header" style="position:sticky;top:0;z-index:10;">
+  <div class="mfs-header">
     <span>📊 정보</span>
     <button class="mfs-close-btn" onclick="closeMobileFullscreen('summary')" style="background:rgba(255,255,255,.25);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:7px 16px;cursor:pointer;font-family:inherit;">✕ 닫기</button>
   </div>
