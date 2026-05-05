@@ -719,7 +719,7 @@ window._fbReady=true;
   <div class="toolbar">
     <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;min-width:320px;">
       <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
-        <span class="lbl-text" id="todayLblText" style="position:relative;z-index:1;pointer-events:none;display:inline-block;"><script>!function(){var n=new Date(),days=['일','월','화','수','목','금','토'];document.write(n.getFullYear()+'년 '+(n.getMonth()+1)+'월 '+n.getDate()+'일 ('+days[n.getDay()]+')');}();<\/script></span>
+        <span class="lbl-text" id="todayLblText" style="position:relative;z-index:1;pointer-events:none;display:inline-block;">-</span>
         <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
       </div>
       <button id="btnDateClose" onclick="backToRealToday()"
@@ -3523,6 +3523,18 @@ function autoFillWorker(input) {
         rowChange();
     }
 }
+
+// ===== 날짜 라벨 즉시 설정 (로딩 순서 무관) =====
+(function(){
+  var n = new Date();
+  var days = ['일','월','화','수','목','금','토'];
+  var txt = n.getFullYear()+'년 '+(n.getMonth()+1)+'월 '+n.getDate()+'일 ('+days[n.getDay()]+')';
+  var el = document.getElementById('todayLblText');
+  if(el) el.textContent = txt;
+  var inp = document.getElementById('datePickerInp');
+  var y = n.getFullYear(), m = String(n.getMonth()+1).padStart(2,'0'), d = String(n.getDate()).padStart(2,'0');
+  if(inp) inp.value = y+'-'+m+'-'+d;
+})();
 
 loadDB();
 
