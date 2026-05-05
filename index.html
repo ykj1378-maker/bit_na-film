@@ -1384,7 +1384,7 @@ function openMobileFullscreen(type){
     content.innerHTML = '';
     // 요약 패널 내용 복사
     const clone = src.cloneNode(true);
-    clone.style.cssText = 'display:flex;flex-direction:column;width:100%;padding:0;border:none;overflow-y:auto;';
+    clone.style.cssText = 'display:flex;flex-direction:column;width:100%;min-height:100%;padding:0;border:none;';
     // sum-panel-title 제거
     const cloneTitle = clone.querySelector('.sum-panel-title');
     if(cloneTitle) cloneTitle.remove();
@@ -3517,12 +3517,12 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- 모바일 전체창: 요약 -->
-<div class="mobile-fullscreen" id="mfsSummary">
-  <div class="mfs-header">
+<div class="mobile-fullscreen" id="mfsSummary" style="display:none;flex-direction:column;">
+  <div class="mfs-header" style="flex:0 0 auto;z-index:2;position:relative;">
     <span>📊 정보</span>
     <button class="mfs-close-btn" onclick="closeMobileFullscreen('summary')" style="background:rgba(255,255,255,.25);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:7px 16px;cursor:pointer;font-family:inherit;">✕ 닫기</button>
   </div>
-  <div class="mfs-content" id="mfsSummaryContent" style="flex:1;overflow-y:auto;"></div>
+  <div class="mfs-content" id="mfsSummaryContent" style="flex:1 1 0;overflow-y:auto;min-height:0;"></div>
 </div>
 
 </body>
