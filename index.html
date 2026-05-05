@@ -212,12 +212,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 .sum-memo-head {
   font-size:11px;font-weight:800;color:#fff;letter-spacing:.8px;
-  background:var(--primary);padding:5px 14px;border-radius:7px 7px 0 0;
+  background:var(--primary);padding:7px 14px;border-radius:7px 7px 0 0;
 }
 .sum-memo-area {
   min-height:60px;max-height:80px;width:100%;box-sizing:border-box;
   border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
-  padding:8px 12px;font-size:13px;font-family:inherit;
+  padding:10px 12px;font-size:13px;font-family:inherit;
   color:var(--text);background:#fff;resize:none;outline:none;
   line-height:1.9;
   background-image:repeating-linear-gradient(transparent, transparent calc(1.9em - 1px), #e8ecf4 calc(1.9em - 1px), #e8ecf4 1.9em);
@@ -481,7 +481,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   /* 탭바 */
   .mobile-tab-bar { display: flex !important; }
   .mobile-tab-bar button { font-size: 12px !important; padding: 9px 0 !important; }
-  .content-area { position: relative; min-height: 0 !important; }
+  .content-area { position: relative; min-height:0!important; }
   .table-wrap.tab-hidden { display: none !important; }
   .sum-panel.tab-visible {
     display: flex !important;
@@ -496,33 +496,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* ===== 스마트폰 전체 레이아웃 높이 수정 (겹침 방지) ===== */
 @media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
-  body {
-    height: 100dvh !important;
-    height: -webkit-fill-available !important;
-    overflow: hidden !important;
-  }
-  #app {
-    height: 100dvh !important;
-    height: -webkit-fill-available !important;
-    min-height: 0 !important;
-  }
-  .content-area {
-    flex: 1 1 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-  .table-wrap {
-    flex: 1 1 0 !important;
-    min-height: 0 !important;
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  .title-bar     { flex-shrink: 0 !important; }
-  .menu-bar      { flex-shrink: 0 !important; }
-  .toolbar       { flex-shrink: 0 !important; }
-  .mobile-tab-bar { flex-shrink: 0 !important; }
-  .mobile-sum-bar { flex-shrink: 0 !important; }
-  .bottom-bar    { flex-shrink: 0 !important; }
+  body { height:100dvh!important; height:-webkit-fill-available!important; overflow:hidden!important; }
+  #app { height:100dvh!important; height:-webkit-fill-available!important; min-height:0!important; }
+  .content-area { flex:1 1 0!important; min-height:0!important; overflow:hidden!important; }
+  .table-wrap { flex:1 1 0!important; min-height:0!important; overflow:auto!important; -webkit-overflow-scrolling:touch!important; }
+  .title-bar,.menu-bar,.toolbar,.mobile-tab-bar,.mobile-sum-bar,.bottom-bar { flex-shrink:0!important; }
 }
 
 /* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
