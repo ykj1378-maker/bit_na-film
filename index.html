@@ -208,16 +208,16 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   font-size:28px;font-weight:800;color:var(--primary);line-height:1;
 }
 .sum-memo-wrap {
-  display:flex;flex-direction:column;flex:1;padding:0 20px 20px;margin-top:14px;min-height:180px;
+  display:flex;flex-direction:column;flex:0 0 auto;padding:0 20px 14px;margin-top:14px;
 }
 .sum-memo-head {
   font-size:11px;font-weight:800;color:#fff;letter-spacing:.8px;
-  background:var(--primary);padding:7px 14px;border-radius:7px 7px 0 0;
+  background:var(--primary);padding:5px 14px;border-radius:7px 7px 0 0;
 }
 .sum-memo-area {
-  flex:1;min-height:160px;width:100%;box-sizing:border-box;
+  min-height:60px;max-height:80px;width:100%;box-sizing:border-box;
   border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
-  padding:10px 12px;font-size:13px;font-family:inherit;
+  padding:8px 12px;font-size:13px;font-family:inherit;
   color:var(--text);background:#fff;resize:none;outline:none;
   line-height:1.9;
   background-image:repeating-linear-gradient(transparent, transparent calc(1.9em - 1px), #e8ecf4 calc(1.9em - 1px), #e8ecf4 1.9em);
@@ -517,12 +517,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
-  .title-bar  { flex-shrink: 0 !important; }
-  .menu-bar   { flex-shrink: 0 !important; }
-  .toolbar    { flex-shrink: 0 !important; }
-  .mobile-tab-bar  { flex-shrink: 0 !important; }
-  .mobile-sum-bar  { flex-shrink: 0 !important; }
-  .bottom-bar { flex-shrink: 0 !important; }
+  .title-bar     { flex-shrink: 0 !important; }
+  .menu-bar      { flex-shrink: 0 !important; }
+  .toolbar       { flex-shrink: 0 !important; }
+  .mobile-tab-bar { flex-shrink: 0 !important; }
+  .mobile-sum-bar { flex-shrink: 0 !important; }
+  .bottom-bar    { flex-shrink: 0 !important; }
 }
 
 /* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
@@ -750,9 +750,9 @@ window._fbReady=true;
           </div>
         </div>
         <div>
-          <div class="sum-section-head" style="background:linear-gradient(90deg,#1B3A6B,#2E5FA3)">총 인건비</div>
-          <div class="sum-card-v" style="background:linear-gradient(135deg,#EBF2FF,#F4F6FA);border-color:#1B3A6B">
-            <div class="sum-value" id="sLabor">₩0</div>
+          <div class="sum-section-head" style="background:linear-gradient(90deg,#1B3A6B,#2E5FA3);font-size:13px;padding:10px 14px;">총 인건비</div>
+          <div class="sum-card-v" style="background:linear-gradient(135deg,#EBF2FF,#F4F6FA);border-color:#1B3A6B;padding:24px 20px;">
+            <div class="sum-value" id="sLabor" style="font-size:38px;font-weight:900;">₩0</div>
           </div>
         </div>
       </div>
@@ -1328,7 +1328,16 @@ function loadDB(){
       if(!c)return;
       const lt=DB.config&&DB.config._savedAt?new Date(DB.config._savedAt):new Date(0);
       const ct=c.config&&c.config._savedAt?new Date(c.config._savedAt):new Date(0);
-      if(ct>=lt){const prev=DB.accounts;if(c.config)c.config.savePath='';Object.assign(DB,c);DB.accounts=prev;localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();}
+      if(ct>=lt){
+        const localAccs=DB.accounts&&DB.accounts.length>0?DB.accounts.slice():[];
+        const fbAccs=c.accounts&&c.accounts.length>0?c.accounts:[];
+        if(c.config)c.config.savePath='';
+        Object.assign(DB,c);
+        const merged=[...fbAccs];
+        localAccs.forEach(function(la){if(!merged.find(function(fa){return fa.id===la.id;}))merged.push(la);});
+        DB.accounts=merged.length>0?merged:localAccs;
+        localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();
+      }
     }).catch(function(){});
   }
   if(window._fbReady){_sync();}else{setTimeout(_sync,1500);}
@@ -2620,6 +2629,10 @@ function syncAccounts(){
   }catch(e){}
   if(window.pywebview && window.pywebview.api){
     window.pywebview.api.save_accounts(JSON.stringify(DB.accounts)).catch(function(){});
+  }
+  if(window._fbReady&&window._fbSave){
+    const fbSnap=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
+    window._fbSave(fbSnap).catch(function(){});
   }
   saveDB(true);
 }
