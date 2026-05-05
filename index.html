@@ -1479,7 +1479,7 @@ function loadDB(){
         const merged=[...fbAccs];
         localAccs.forEach(function(la){if(!merged.find(function(fa){return fa.id===la.id;}))merged.push(la);});
         DB.accounts=merged.length>0?merged:localAccs;
-        localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();
+        localStorage.setItem('bn_db2',JSON.stringify(DB));today=getDateStr(new Date());updateTodayLabel();loadTodayRows();calcSummary();
       }
     }).catch(function(){});
   }
@@ -1719,6 +1719,7 @@ function updateTodayLabel(){
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
   const inp = document.getElementById('datePickerInp');
+  if(!lbl) return;
   let span = lbl.querySelector('.lbl-text');
   if(!span){
     span = document.createElement('span');
@@ -2851,6 +2852,7 @@ function _applyDateLabel(val){
   const d = new Date(val + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
   const lbl = document.getElementById('todayLbl');
+  if(!lbl) return;
   let span = lbl.querySelector('.lbl-text');
   if(!span){
     span = document.createElement('span');
