@@ -591,7 +591,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   padding-top: calc(12px + env(safe-area-inset-top, 0px));
 }
 .mfs-close-btn {
@@ -606,8 +606,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   font-family: inherit;
 }
 .mfs-content {
-  flex: 1;
-  overflow: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 .mobile-tab-bar {
@@ -3517,12 +3518,12 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- 모바일 전체창: 요약 -->
-<div class="mobile-fullscreen" id="mfsSummary" style="display:none;flex-direction:column;">
-  <div class="mfs-header" style="flex:0 0 auto;z-index:2;position:relative;">
+<div class="mobile-fullscreen" id="mfsSummary">
+  <div class="mfs-header">
     <span>📊 정보</span>
-    <button class="mfs-close-btn" onclick="closeMobileFullscreen('summary')" style="background:rgba(255,255,255,.25);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:7px 16px;cursor:pointer;font-family:inherit;">✕ 닫기</button>
+    <button class="mfs-close-btn" onclick="closeMobileFullscreen('summary')">✕ 닫기</button>
   </div>
-  <div class="mfs-content" id="mfsSummaryContent" style="flex:1 1 0;overflow-y:auto;min-height:0;"></div>
+  <div class="mfs-content" id="mfsSummaryContent"></div>
 </div>
 
 </body>
