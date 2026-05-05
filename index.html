@@ -1225,7 +1225,7 @@ let _minMods = {}, _maxMods = {};
 let searchTimer = null;
 let _navigating = false;
 
-function getDateStr(d){ return d.toISOString().split('T')[0]; }
+function getDateStr(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
 function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
@@ -2351,7 +2351,7 @@ function loadDateView(){
 // ============ STATS ============
 function openStats(){
   const now=new Date();
-  document.getElementById('sfrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  document.getElementById('sfrom').value=getDateStr(new Date(now.getFullYear(),now.getMonth(),1));
   document.getElementById('sto').value=today;
   calcStats();
   openMod('statsMod');
@@ -3157,7 +3157,7 @@ function openGraphMod(){
   }
   // 기본 날짜: 이번 달
   const now = new Date();
-  document.getElementById('graphFrom').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  document.getElementById('graphFrom').value = getDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
   document.getElementById('graphTo').value = today;
   const cards = document.getElementById('graphCards');
   if(cards) cards.innerHTML = '';
