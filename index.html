@@ -12,6 +12,10 @@
 <title>BN 업무일지</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
 :root{
   --primary:#1B3A6B;--primary-light:#2E5FA3;--accent:#F5A623;
   --bg:#F4F6FA;--white:#FFFFFF;--border:#DDE3EE;
@@ -480,7 +484,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   /* 탭바 */
   .mobile-tab-bar { display: flex !important; }
   .mobile-tab-bar button { font-size: 12px !important; padding: 9px 0 !important; }
-  .content-area { position: relative; }
+  .content-area { position: relative; min-height: 0 !important; }
   .table-wrap.tab-hidden { display: none !important; }
   .sum-panel.tab-visible {
     display: flex !important;
@@ -491,6 +495,55 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
   /* 타이틀바 */
   .title-bar .t-name { font-size: 12px !important; }
+}
+
+/* ===== 스마트폰 전체 레이아웃 높이 수정 ===== */
+@media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
+  /* 실제 모바일 뷰포트 높이 사용 (주소창/상태바 고려) */
+  body {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    overflow: hidden !important;
+  }
+  #app {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    min-height: 0 !important;
+  }
+  /* content-area가 남은 공간을 정확히 채우도록 */
+  .content-area {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  /* 각 고정 영역 높이 명시 */
+  .title-bar {
+    flex-shrink: 0 !important;
+  }
+  .menu-bar {
+    flex-shrink: 0 !important;
+    height: 36px !important;
+  }
+  .toolbar {
+    flex-shrink: 0 !important;
+    min-height: 0 !important;
+  }
+  .mobile-tab-bar {
+    flex-shrink: 0 !important;
+  }
+  .mobile-sum-bar {
+    flex-shrink: 0 !important;
+  }
+  .bottom-bar {
+    flex-shrink: 0 !important;
+  }
+  /* 테이블 wrap 스크롤 */
+  .table-wrap {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
 }
 
 /* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
