@@ -1384,14 +1384,18 @@ function openMobileFullscreen(type){
     content.innerHTML = '';
     // 요약 패널 내용 복사
     const clone = src.cloneNode(true);
-    clone.style.cssText = 'display:block;width:100%;padding:0;border:none;flex:1;overflow-y:auto;';
-    clone.querySelector('.sum-panel-title') && (clone.querySelector('.sum-panel-title').style.display='none');
-    // sum-panel-body padding-top을 헤더 높이(약 56px)만큼 확보
+    clone.style.cssText = 'display:flex;flex-direction:column;width:100%;padding:0;border:none;overflow-y:auto;';
+    // sum-panel-title 제거
+    const cloneTitle = clone.querySelector('.sum-panel-title');
+    if(cloneTitle) cloneTitle.remove();
+    // sum-panel-body 상단 여백 확보 (총인원 섹션 헤드 안 가려지게)
     const cloneBody = clone.querySelector('.sum-panel-body');
-    if(cloneBody) cloneBody.style.paddingTop = '20px';
-    // 총인원 첫 번째 섹션에 margin-top 추가
-    const firstSection = cloneBody && cloneBody.querySelector('.sum-section-head');
-    if(firstSection) firstSection.style.marginTop = '4px';
+    if(cloneBody){
+      cloneBody.style.cssText = 'display:flex;flex-direction:column;gap:14px;padding:16px 20px 0;flex:0 0 auto;';
+    }
+    // 메모랩도 펼쳐지게
+    const cloneMemo = clone.querySelector('.sum-memo-wrap');
+    if(cloneMemo) cloneMemo.style.cssText = 'display:flex;flex-direction:column;flex:1 1 0;padding:0 20px 20px;margin-top:14px;min-height:80px;';
     content.appendChild(clone);
     // 닫기 버튼 헤더를 mfsSummary 상단에 표시 (이미 HTML에 존재)
     document.getElementById('mfsSummary').classList.add('active');
