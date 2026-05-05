@@ -460,6 +460,33 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .msb-label { font-size: 9px; font-weight: 800; color: var(--muted); letter-spacing: .3px; }
 .msb-value { font-size: 12px; font-weight: 800; color: var(--primary); margin-top: 1px; }
 
+/* ===== 모바일 탭 전환 ===== */
+.mobile-tab-bar {
+  display: none;
+  flex-shrink: 0;
+  background: #fff;
+  border-bottom: 2px solid var(--border);
+}
+.mobile-tab-bar button {
+  flex: 1; padding: 10px 0; border: none; background: none;
+  font-size: 13px; font-weight: 700; color: var(--muted);
+  font-family: inherit; cursor: pointer; border-bottom: 3px solid transparent;
+  transition: .15s;
+}
+.mobile-tab-bar button.active {
+  color: var(--primary); border-bottom: 3px solid var(--primary);
+}
+@media (max-width: 700px) {
+  .mobile-tab-bar { display: flex !important; }
+  .content-area { position: relative; }
+  .table-wrap.tab-hidden { display: none !important; }
+  .sum-panel.tab-visible {
+    display: flex !important;
+    width: 100% !important; min-width: 0 !important;
+    border-right: none !important;
+  }
+}
+
 .menu-btn{background:none;border:none;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);border-radius:5px;font-weight:500;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation;}
 .menu-btn:hover,.menu-btn.open{background:var(--bg);color:var(--primary);}
 .menu-drop-item{display:block;width:100%;text-align:left;padding:13px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-family:inherit;color:#333;-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:44px;box-sizing:border-box;white-space:nowrap;}
@@ -528,7 +555,7 @@ window._fbReady=true;
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;min-width:320px;">
       <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
         <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
       </div>
@@ -536,7 +563,8 @@ window._fbReady=true;
         style="display:none;background:#E53E3E;color:#fff;border:none;border-radius:8px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">닫기</button>
     </div>
     <button class="tb-btn gold" onclick="openCalc()">계산기</button>
-    <div class="search-wrap" id="searchWrap">
+    <button class="tb-btn blue" onclick="openLoad()">불러오기</button>
+    <div class="search-wrap" id="searchWrap" style="margin-left:auto;">
       <span class="search-icon" style="font-size:14px;color:#7A8AA0">🔍</span>
       <input type="text" id="searchInp" placeholder="검색"
         oninput="onSearch(this.value)"
@@ -544,7 +572,12 @@ window._fbReady=true;
         autocomplete="off">
       <div class="search-dropdown" id="searchDropdown"></div>
     </div>
-    <button class="tb-btn blue" onclick="openLoad()">불러오기</button>
+  </div>
+
+  <!-- 모바일 탭 바 -->
+  <div class="mobile-tab-bar" id="mobileTabBar">
+    <button id="tabBtnTable" class="active" onclick="switchMobileTab('table')">📋 테이블</button>
+    <button id="tabBtnSummary" onclick="switchMobileTab('summary')">📊 요약</button>
   </div>
 
   <!-- CONTENT AREA: 좌(테이블) + 우(요약) -->
@@ -1023,10 +1056,29 @@ let calcExpr = '';
 let _minMods = {}, _maxMods = {};
 let searchTimer = null;
 
-function getDateStr(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+function getDateStr(d){ return d.toISOString().split('T')[0]; }
 function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
+// ===== 모바일 탭 전환 =====
+function switchMobileTab(tab){
+  const tableWrap = document.querySelector('.table-wrap');
+  const sumPanel  = document.querySelector('.sum-panel');
+  const btnTable  = document.getElementById('tabBtnTable');
+  const btnSummary= document.getElementById('tabBtnSummary');
+  if(tab === 'summary'){
+    tableWrap.classList.add('tab-hidden');
+    sumPanel.classList.add('tab-visible');
+    btnTable.classList.remove('active');
+    btnSummary.classList.add('active');
+  } else {
+    tableWrap.classList.remove('tab-hidden');
+    sumPanel.classList.remove('tab-visible');
+    btnTable.classList.add('active');
+    btnSummary.classList.remove('active');
+  }
+}
+
 function loadDB(){
   try{
     const r=localStorage.getItem('bn_db2');
