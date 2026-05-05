@@ -209,15 +209,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   font-size:28px;font-weight:800;color:var(--primary);line-height:1;
 }
 .sum-memo-wrap {
-  display:flex;flex-direction:column;flex:0 0 auto;padding:0 20px 14px;margin-top:14px;
-  height:110px;
+  display:flex;flex-direction:column;flex:1 1 0;padding:0 20px 14px;margin-top:14px;
+  min-height:90px;max-height:130px;
 }
 .sum-memo-head {
   font-size:11px;font-weight:800;color:#fff;letter-spacing:.8px;
   background:var(--primary);padding:7px 14px;border-radius:7px 7px 0 0;
 }
 .sum-memo-area {
-  flex:1;min-height:0;max-height:80px;width:100%;box-sizing:border-box;
+  flex:1;min-height:0;width:100%;box-sizing:border-box;
   border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
   padding:10px 12px;font-size:13px;font-family:inherit;
   color:var(--text);background:#fff;resize:none;outline:none;
@@ -1385,6 +1385,9 @@ function openMobileFullscreen(type){
     const clone = src.cloneNode(true);
     clone.style.cssText = 'display:block;width:100%;padding:0;border:none;flex:1;overflow-y:auto;';
     clone.querySelector('.sum-panel-title') && (clone.querySelector('.sum-panel-title').style.display='none');
+    // sum-panel-body에 padding-top 추가해서 총인원 제목 잘림 방지
+    const cloneBody = clone.querySelector('.sum-panel-body');
+    if(cloneBody) cloneBody.style.paddingTop = '16px';
     content.appendChild(clone);
     // 닫기 버튼 헤더를 mfsSummary 상단에 표시 (이미 HTML에 존재)
     document.getElementById('mfsSummary').classList.add('active');
@@ -3313,15 +3316,21 @@ function tableNavKey(e, inp){
     if(!targetRow) return;
     const targetInp = targetRow.querySelector(`[data-col="${c}"]`);
     if(!targetInp) return;
-    // readonly 셀 이동: blur→readonly 복귀 타이밍 이후에 enableEdit 실행
+    // readonly 셀 이동: onblur 임시 비활성화 후 enableEdit
     if(targetInp.hasAttribute('readonly')){
-      setTimeout(function(){
-        enableEdit(targetInp.closest('td'));
-        setTimeout(function(){
-          targetInp.focus();
-          if(targetInp.type !== 'checkbox') targetInp.select();
-        }, 30);
-      }, 50);
+      const td = targetInp.closest('td');
+      // 현재 활성 셀의 onblur를 잠시 우회 (readonly 복귀 방지)
+      const prevActive = document.activeElement;
+      if(prevActive && prevActive !== targetInp){
+        const prevBlur = prevActive.onblur;
+        prevActive.onblur = null;
+        setTimeout(function(){ prevActive.onblur = prevBlur; }, 200);
+      }
+      td.classList.add('editing');
+      targetInp.removeAttribute('readonly');
+      targetInp.style.pointerEvents = 'all';
+      targetInp.focus();
+      if(targetInp.type !== 'checkbox') targetInp.select();
     } else {
       targetInp.focus();
       if(targetInp.type !== 'checkbox') targetInp.select();
