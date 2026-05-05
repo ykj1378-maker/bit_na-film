@@ -191,6 +191,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 .sum-panel-body {
   display:flex;flex-direction:column;gap:14px;padding:20px 20px 0;
+  flex:1;overflow-y:auto;
 }
 .sum-section-head {
   font-size:11px;font-weight:800;color:#fff;letter-spacing:.8px;
@@ -208,14 +209,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   font-size:28px;font-weight:800;color:var(--primary);line-height:1;
 }
 .sum-memo-wrap {
-  display:flex;flex-direction:column;flex:0 0 auto;padding:0 20px 14px;margin-top:14px;
+  display:flex;flex-direction:column;flex:1 1 0;padding:0 20px 14px;margin-top:14px;min-height:0;
 }
 .sum-memo-head {
   font-size:11px;font-weight:800;color:#fff;letter-spacing:.8px;
   background:var(--primary);padding:7px 14px;border-radius:7px 7px 0 0;
 }
 .sum-memo-area {
-  min-height:60px;max-height:80px;width:100%;box-sizing:border-box;
+  flex:1;min-height:0;width:100%;box-sizing:border-box;
   border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
   padding:10px 12px;font-size:13px;font-family:inherit;
   color:var(--text);background:#fff;resize:none;outline:none;
@@ -494,13 +495,54 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .title-bar .t-name { font-size: 12px !important; }
 }
 
-/* ===== 스마트폰 전체 레이아웃 높이 수정 (겹침 방지) ===== */
+
+/* ===== 스마트폰 레이아웃 높이·분할 수정 (겹침 방지) ===== */
 @media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
-  body { height:100dvh!important; height:-webkit-fill-available!important; overflow:hidden!important; }
-  #app { height:100dvh!important; height:-webkit-fill-available!important; min-height:0!important; }
-  .content-area { flex:1 1 0!important; min-height:0!important; overflow:hidden!important; }
-  .table-wrap { flex:1 1 0!important; min-height:0!important; overflow:auto!important; -webkit-overflow-scrolling:touch!important; }
-  .title-bar,.menu-bar,.toolbar,.mobile-tab-bar,.mobile-sum-bar,.bottom-bar { flex-shrink:0!important; }
+  /* 실제 뷰포트 높이 적용 (주소창 포함 문제 해결) */
+  html { height: 100%; height: -webkit-fill-available; }
+  body {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  /* 앱 전체 높이를 실제 화면에 맞춤 */
+  #app {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  /* 고정 영역 — 절대 줄어들지 않음 */
+  .title-bar    { flex: 0 0 auto !important; }
+  .menu-bar     { flex: 0 0 auto !important; }
+  .toolbar      { flex: 0 0 auto !important; }
+  .mobile-tab-bar { flex: 0 0 auto !important; }
+  .mobile-sum-bar { flex: 0 0 auto !important; }
+  .bottom-bar   { flex: 0 0 auto !important; }
+  /* 컨텐츠 영역 — 남은 공간 정확히 채움 */
+  .content-area {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+  /* 테이블 wrap — 스크롤 가능 */
+  .table-wrap {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  /* 탭 전환 시 요약패널 */
+  .sum-panel.tab-visible {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
 }
 
 /* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
@@ -728,9 +770,9 @@ window._fbReady=true;
           </div>
         </div>
         <div>
-          <div class="sum-section-head" style="background:linear-gradient(90deg,#1B3A6B,#2E5FA3);font-size:13px;padding:10px 14px;">총 인건비</div>
-          <div class="sum-card-v" style="background:linear-gradient(135deg,#EBF2FF,#F4F6FA);border-color:#1B3A6B;padding:24px 20px;">
-            <div class="sum-value" id="sLabor" style="font-size:38px;font-weight:900;">₩0</div>
+          <div class="sum-section-head" style="background:linear-gradient(90deg,#1B3A6B,#2E5FA3);font-size:14px;padding:12px 16px;">총 인건비</div>
+          <div class="sum-card-v" style="background:linear-gradient(135deg,#EBF2FF,#F4F6FA);border-color:#1B3A6B;padding:32px 20px;">
+            <div class="sum-value" id="sLabor" style="font-size:46px;font-weight:900;letter-spacing:-1px;">₩0</div>
           </div>
         </div>
       </div>
