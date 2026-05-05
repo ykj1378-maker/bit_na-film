@@ -415,7 +415,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .win-btn { display: none !important; }
 
 /* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
-@media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
+@media screen and (max-width: 1024px) {
   /* 전체 높이 고정 */
   html { height: -webkit-fill-available !important; }
   body { height: 100dvh !important; height: -webkit-fill-available !important; overflow: hidden !important; }
@@ -543,7 +543,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 
 /* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
-@media (hover: none) and (pointer: coarse) and (max-width: 400px) {
+@media screen and (max-width: 400px) {
   .work-table { min-width: 420px; }
   .work-table th { font-size: 9px !important; padding: 6px 2px !important; }
   .work-table td { font-size: 10px !important; padding: 4px 1px !important; }
@@ -1289,7 +1289,7 @@ let _mfsTapTimer = {table:null, summary:null};
 let _mfsActive = null;
 
 function isMobileDevice(){
-  return (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024;
+  return window.innerWidth <= 1024;
 }
 
 function initMobileFullscreen(){
@@ -1616,6 +1616,12 @@ function appInit(){
   loadMemo();
   initMobileFullscreen();
   initMiniTabTouch();
+  // 모바일 탭 강제 초기화 (미디어쿼리 미매칭 대비)
+  if(window.innerWidth <= 1024){
+    const tabBar = document.getElementById('mobileTabBar');
+    if(tabBar) tabBar.style.display = 'flex';
+    switchMobileTab('table');
+  }
   // 날짜 변경 감지: 자정이 지나면 새 날짜로 초기화
   setInterval(()=>{
     const newDay = getDateStr(new Date());
