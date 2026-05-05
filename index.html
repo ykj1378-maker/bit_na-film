@@ -1248,24 +1248,25 @@ function switchMobileTab(tab){
   }
 }
 
-// ===== 미니탭 터치: 싱글→전체창, 더블→복귀 =====
+// ===== 미니탭 터치: 더블탭→전체창, 더블탭→복귀 =====
 function initMiniTabTouch(){
   if(!isMobileDevice()) return;
   function addTapHandler(el, openType){
     if(!el) return;
-    let _last = 0, _timer = null;
+    let _last = 0;
     el.addEventListener('touchend', function(e){
       if(e.target.closest('input,button,select,textarea,a,.editable-cell')) return;
       const now = Date.now();
       if(now - _last < 380){
-        clearTimeout(_timer);
-        closeMobileFullscreen(openType);
+        // 더블탭: 전체창이 열려있으면 닫기, 아니면 열기
+        if(_mfsActive === openType){
+          closeMobileFullscreen(openType);
+        } else {
+          openMobileFullscreen(openType);
+        }
         _last = 0; return;
       }
       _last = now;
-      _timer = setTimeout(function(){
-        openMobileFullscreen(openType);
-      }, 390);
     }, {passive:true});
   }
   addTapHandler(document.querySelector('.table-wrap'), 'table');
@@ -1310,17 +1311,28 @@ function initMobileFullscreen(){
     });
   }
 
-  // 테이블 영역 - 빈 공간(tbody) 탭
+  // 테이블 영역 - 빈 공간(tbody) 더블탭
   const tableWrap = document.getElementById('tableWrap');
   if(tableWrap){
+    let _lastTapTable = 0;
     tableWrap.addEventListener('click', function(e){
       // input, button, select 등 인터랙티브 요소 터치는 무시
       if(e.target.closest('input,button,select,textarea,a,.editable-cell')) return;
-      openMobileFullscreen('table');
+      const now = Date.now();
+      if(now - _lastTapTable < 350){
+        if(_mfsActive === 'table'){
+          closeMobileFullscreen('table');
+        } else {
+          openMobileFullscreen('table');
+        }
+        _lastTapTable = 0;
+        return;
+      }
+      _lastTapTable = now;
     });
   }
 
-  // 요약 패널 탭
+  // 요약 패널 더블탭
   const sumPanel = document.querySelector('.sum-panel');
   if(sumPanel){
     let _lastTap = 0;
@@ -1328,13 +1340,15 @@ function initMobileFullscreen(){
       if(e.target.closest('textarea,input,button')) return;
       const now = Date.now();
       if(now - _lastTap < 350){
-        // 더블탭 → 전체창 닫기 (열려있으면)
-        closeMobileFullscreen('summary');
+        if(_mfsActive === 'summary'){
+          closeMobileFullscreen('summary');
+        } else {
+          openMobileFullscreen('summary');
+        }
         _lastTap = 0;
         return;
       }
       _lastTap = now;
-      openMobileFullscreen('summary');
     });
   }
 
