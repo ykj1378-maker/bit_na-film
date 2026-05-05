@@ -182,7 +182,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .sum-panel {
   width:460px;min-width:460px;flex-shrink:0;background:#fff;
   display:flex;flex-direction:column;padding:0;gap:0;
-  overflow:hidden;border-right:1px solid var(--border);
+  overflow-y:auto;overflow-x:hidden;border-right:1px solid var(--border);
 }
 .sum-panel-title {
   font-size:13px;font-weight:800;color:#fff;letter-spacing:1px;
@@ -191,7 +191,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 .sum-panel-body {
   display:flex;flex-direction:column;gap:14px;padding:20px 20px 0;
-  flex:0 0 auto;
+  flex:0 0 auto;overflow-y:visible;
 }
 .sum-section-head {
   font-size:11px;font-weight:800;color:#fff;letter-spacing:.8px;
@@ -779,9 +779,9 @@ window._fbReady=true;
           </div>
         </div>
         <div>
-          <div class="sum-section-head">총 일 수</div>
-          <div class="sum-card-v">
-            <div class="sum-value" id="sQty">0</div>
+          <div class="sum-section-head" style="font-size:13px;padding:10px 14px;">총 일 수</div>
+          <div class="sum-card-v" style="padding:22px 18px;">
+            <div class="sum-value" id="sQty" style="font-size:36px;font-weight:900;">0</div>
             <div style="border-top:1px solid var(--border);margin:10px 0 5px;"></div>
             <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.5px;margin-bottom:4px;">현장별 일 수</div>
             <div id="sSiteList" style="max-height:220px;overflow-y:auto;"></div>
@@ -3312,9 +3312,13 @@ function tableNavKey(e, inp){
     if(!targetRow) return;
     const targetInp = targetRow.querySelector(`[data-col="${c}"]`);
     if(!targetInp) return;
-    // readonly 셀은 enableEdit 호출
+    // readonly 셀은 enableEdit 후 setTimeout으로 포커스 보장
     if(targetInp.hasAttribute('readonly')){
       enableEdit(targetInp.closest('td'));
+      setTimeout(function(){
+        targetInp.focus();
+        if(targetInp.type !== 'checkbox') targetInp.select();
+      }, 20);
     } else {
       targetInp.focus();
       if(targetInp.type !== 'checkbox') targetInp.select();
