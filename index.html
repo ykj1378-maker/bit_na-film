@@ -798,7 +798,7 @@ window._fbReady=true;
         <div>
           <div class="sum-section-head" style="background:linear-gradient(90deg,#1B3A6B,#2E5FA3);font-size:15px;padding:14px 18px;">총 인건비</div>
           <div class="sum-card-v" style="background:linear-gradient(135deg,#EBF2FF,#F4F6FA);border-color:#1B3A6B;padding:44px 20px;">
-            <div class="sum-value" id="sLabor" style="font-size:46px;font-weight:900;letter-spacing:-1px;">₩0</div>
+            <div class="sum-value" id="sLabor" style="font-size:36px;font-weight:900;">₩0</div>
           </div>
         </div>
       </div>
@@ -1390,8 +1390,8 @@ function openMobileFullscreen(type){
     const memoEl   = document.getElementById('sumMemo');
     const worker = workerEl ? workerEl.textContent : '0 명';
     const qty    = qtyEl    ? qtyEl.textContent    : '0';
-    const mat    = matEl    ? matEl.textContent    : '₩0';
-    const labor  = laborEl  ? laborEl.textContent  : '₩0';
+    const mat    = matEl    ? matEl.textContent    : '₩ 0';
+    const labor  = laborEl  ? laborEl.textContent  : '₩ 0';
     const siteHTML = siteEl ? siteEl.innerHTML     : '';
     const memo   = memoEl   ? memoEl.value         : '';
     content.innerHTML = `
@@ -1420,7 +1420,7 @@ function openMobileFullscreen(type){
         <div>
           <div style="background:linear-gradient(90deg,#1B3A6B,#2E5FA3);color:#fff;font-size:14px;font-weight:800;padding:12px 16px;border-radius:7px 7px 0 0;">총 인건비</div>
           <div style="background:linear-gradient(135deg,#EBF2FF,#F4F6FA);border:1.5px solid #1B3A6B;border-top:none;border-radius:0 0 10px 10px;padding:32px 20px;">
-            <div style="font-size:46px;font-weight:900;letter-spacing:-1px;color:var(--primary);">${labor}</div>
+            <div style="font-size:36px;font-weight:900;color:var(--primary);">${labor}</div>
           </div>
         </div>
       </div>
@@ -1935,8 +1935,8 @@ function calcSummary(){
   }
   document.getElementById('sWorker').textContent=workers+'명';
   document.getElementById('sQty').textContent=qty%1===0?qty:qty.toFixed(1);
-  document.getElementById('sMat').textContent='₩'+fmt(mat);
-  document.getElementById('sLabor').textContent='₩'+fmt(labor);
+  document.getElementById('sMat').textContent='₩ '+fmt(mat);
+  document.getElementById('sLabor').textContent='₩ '+fmt(labor);
   // 모바일 요약바 동기화
   const _mw=document.getElementById('m_sWorker');
   const _mq=document.getElementById('m_sQty');
@@ -2880,10 +2880,24 @@ function doCloseSave(){closeMod('closeSaveMod');saveCurrentRows();saveDB(true).f
 function _appClose(){
   toast('☁️','저장 완료!');
   setTimeout(function(){
-    if(window.pywebview&&window.pywebview.api){window.pywebview.api.close_window();return;}
-    var p=(window.navigator.standalone===true)||window.matchMedia('(display-mode: standalone)').matches;
-    if(p){if(history.length>1){history.go(-history.length);}else{location.replace('about:blank');}return;}
-    try{window.close();}catch(e){}
+    // pywebview (PC 데스크탑 앱)
+    if(window.pywebview&&window.pywebview.api){
+      window.pywebview.api.close_window();
+      return;
+    }
+    // PWA (스마트폰 홈화면 앱)
+    var isPWA=(window.navigator.standalone===true)||window.matchMedia('(display-mode: standalone)').matches;
+    if(isPWA){
+      try{window.close();}catch(e){}
+      setTimeout(function(){location.replace('about:blank');},200);
+      return;
+    }
+    // 일반 브라우저
+    try{
+      window.open('','_self').close();
+    }catch(e){
+      try{window.close();}catch(e2){}
+    }
   },700);
 }
 
