@@ -719,7 +719,7 @@ window._fbReady=true;
   <div class="toolbar">
     <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;min-width:320px;">
       <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
-        <span class="lbl-text" style="position:relative;z-index:1;pointer-events:none;">날짜 로딩중...</span>
+        <span class="lbl-text" id="todayLblText" style="position:relative;z-index:1;pointer-events:none;display:inline-block;"><script>!function(){var n=new Date(),days=['일','월','화','수','목','금','토'];document.write(n.getFullYear()+'년 '+(n.getMonth()+1)+'월 '+n.getDate()+'일 ('+days[n.getDay()]+')');}();<\/script></span>
         <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
       </div>
       <button id="btnDateClose" onclick="backToRealToday()"
@@ -1717,17 +1717,9 @@ function appInit(){
 function updateTodayLabel(){
   const d = new Date(today + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
-  const lbl = document.getElementById('todayLbl');
+  const txt = document.getElementById('todayLblText');
   const inp = document.getElementById('datePickerInp');
-  if(!lbl) return;
-  let span = lbl.querySelector('.lbl-text');
-  if(!span){
-    span = document.createElement('span');
-    span.className = 'lbl-text';
-    span.style.cssText = 'position:relative;z-index:1;pointer-events:none;';
-    lbl.insertBefore(span, lbl.firstChild);
-  }
-  span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  if(txt) txt.textContent = d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+days[d.getDay()]+')';
   if(inp) inp.value = today;
 }
 
@@ -2851,16 +2843,8 @@ function backToRealToday(){
 function _applyDateLabel(val){
   const d = new Date(val + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
-  const lbl = document.getElementById('todayLbl');
-  if(!lbl) return;
-  let span = lbl.querySelector('.lbl-text');
-  if(!span){
-    span = document.createElement('span');
-    span.className = 'lbl-text';
-    span.style.cssText = 'position:relative;z-index:1;pointer-events:none;';
-    lbl.insertBefore(span, lbl.firstChild);
-  }
-  span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  const txt = document.getElementById('todayLblText');
+  if(txt) txt.textContent = d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+days[d.getDay()]+')';
 }
 
 function exitApp(){
