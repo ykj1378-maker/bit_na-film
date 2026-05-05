@@ -484,12 +484,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .mobile-tab-bar button { font-size: 12px !important; padding: 9px 0 !important; }
   .content-area { position: relative; min-height:0!important; }
   .table-wrap.tab-hidden { display: none !important; }
-  .sum-panel.tab-visible {
-    display: flex !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    border-right: none !important;
-  }
 
   /* 타이틀바 */
   .title-bar .t-name { font-size: 12px !important; }
@@ -498,50 +492,56 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* ===== 스마트폰 레이아웃 높이·분할 수정 (겹침 방지) ===== */
 @media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
-  /* 실제 뷰포트 높이 적용 (주소창 포함 문제 해결) */
-  html { height: 100%; height: -webkit-fill-available; }
+  html { height: -webkit-fill-available !important; }
   body {
     height: 100dvh !important;
     height: -webkit-fill-available !important;
-    max-height: 100dvh !important;
     overflow: hidden !important;
   }
-  /* 앱 전체 높이를 실제 화면에 맞춤 */
   #app {
     height: 100dvh !important;
     height: -webkit-fill-available !important;
-    max-height: 100dvh !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
   }
-  /* 고정 영역 — 절대 줄어들지 않음 */
-  .title-bar    { flex: 0 0 auto !important; }
-  .menu-bar     { flex: 0 0 auto !important; }
-  .toolbar      { flex: 0 0 auto !important; }
-  .mobile-tab-bar { flex: 0 0 auto !important; }
-  .mobile-sum-bar { flex: 0 0 auto !important; }
-  .bottom-bar   { flex: 0 0 auto !important; }
-  /* 컨텐츠 영역 — 남은 공간 정확히 채움 */
+  /* 고정 영역 */
+  .title-bar, .menu-bar, .toolbar,
+  .mobile-tab-bar, .mobile-sum-bar,
+  .bottom-bar { flex: 0 0 auto !important; }
+  /* 컨텐츠 영역 — 남은 공간 전부 차지 */
   .content-area {
     flex: 1 1 0 !important;
     min-height: 0 !important;
-    overflow: hidden !important;
     position: relative !important;
+    overflow: hidden !important;
   }
-  /* 테이블 wrap — 스크롤 가능 */
+  /* 테이블·요약 패널을 content-area 안에서 절대위치로 꽉 채움 */
   .table-wrap {
-    flex: 1 1 0 !important;
-    min-height: 0 !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
-  /* 탭 전환 시 요약패널 */
+  .table-wrap.tab-hidden { display: none !important; }
+  /* 요약 패널 기본 숨김 */
+  .sum-panel { display: none !important; }
+  /* 요약 탭 활성화 시 */
   .sum-panel.tab-visible {
-    flex: 1 1 0 !important;
-    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    border: none !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #fff !important;
   }
 }
 
