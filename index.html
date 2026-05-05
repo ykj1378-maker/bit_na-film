@@ -412,7 +412,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 .win-btn { display: none !important; }
 
-@media (max-width: 760px) {
+/* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
+@media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
   /* 기본 레이아웃 */
   .sum-panel { display: none !important; }
   .table-wrap { border-left: none !important; padding: 6px 4px !important; }
@@ -488,8 +489,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .title-bar .t-name { font-size: 12px !important; }
 }
 
-/* 세로모드 360px 추가 최적화 */
-@media (max-width: 390px) {
+/* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
+@media (hover: none) and (pointer: coarse) and (max-width: 400px) {
   .work-table { min-width: 420px; }
   .work-table th { font-size: 9px !important; padding: 6px 2px !important; }
   .work-table td { font-size: 10px !important; padding: 4px 1px !important; }
@@ -1168,8 +1169,12 @@ function switchMobileTab(tab){
 let _mfsTapTimer = {table:null, summary:null};
 let _mfsActive = null;
 
+function isMobileDevice(){
+  return (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024;
+}
+
 function initMobileFullscreen(){
-  if(window.innerWidth > 760) return;
+  if(!isMobileDevice()) return;
 
   // 테이블 영역 - 빈 공간(tbody) 탭
   const tableWrap = document.getElementById('tableWrap');
@@ -1224,7 +1229,7 @@ function initMobileFullscreen(){
 }
 
 function openMobileFullscreen(type){
-  if(window.innerWidth > 760) return;
+  if(!isMobileDevice()) return;
   if(_mfsActive === type) return;
   _mfsActive = type;
 
