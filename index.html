@@ -3524,25 +3524,35 @@ function autoFillWorker(input) {
     }
 }
 
-// ===== 날짜 라벨 즉시 설정 (로딩 순서 무관) =====
+// ===== 날짜 라벨 즉시 설정 =====
 (function(){
   var n = new Date();
+  var y = n.getFullYear();
+  var mo = n.getMonth()+1;
+  var d = n.getDate();
   var days = ['일','월','화','수','목','금','토'];
-  var txt = n.getFullYear()+'년 '+(n.getMonth()+1)+'월 '+n.getDate()+'일 ('+days[n.getDay()]+')';
+  var dateStr = y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  var labelTxt = y+'년 '+mo+'월 '+d+'일 ('+days[n.getDay()]+')';
+  // 전역 today 변수도 강제 갱신
+  today = dateStr;
   var el = document.getElementById('todayLblText');
-  if(el) el.textContent = txt;
+  if(el) el.textContent = labelTxt;
   var inp = document.getElementById('datePickerInp');
-  var y = n.getFullYear(), m = String(n.getMonth()+1).padStart(2,'0'), d = String(n.getDate()).padStart(2,'0');
-  if(inp) inp.value = y+'-'+m+'-'+d;
+  if(inp) inp.value = dateStr;
 })();
 
 loadDB();
 
 (function(){try{var p=(window.navigator.standalone===true)||window.matchMedia('(display-mode: standalone)').matches;if(p&&history.length<=1)history.pushState(null,'',location.href);}catch(e){}})();
 
-// ===== PWA Service Worker =====
+// ===== PWA Service Worker - 캐시 강제 갱신 =====
 if ('serviceWorker' in navigator) {
+  // 기존 SW 캐시 전체 삭제 후 재등록
   window.addEventListener('load', () => {
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister());
+    });
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
