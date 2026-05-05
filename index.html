@@ -209,14 +209,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   font-size:28px;font-weight:800;color:var(--primary);line-height:1;
 }
 .sum-memo-wrap {
-  display:flex;flex-direction:column;flex:1 1 0;padding:0 20px 14px;margin-top:14px;min-height:0;
+  display:flex;flex-direction:column;flex:0 0 auto;padding:0 20px 14px;margin-top:14px;
+  height:110px;
 }
 .sum-memo-head {
   font-size:11px;font-weight:800;color:#fff;letter-spacing:.8px;
   background:var(--primary);padding:7px 14px;border-radius:7px 7px 0 0;
 }
 .sum-memo-area {
-  flex:1;min-height:0;width:100%;box-sizing:border-box;
+  flex:1;min-height:0;max-height:80px;width:100%;box-sizing:border-box;
   border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
   padding:10px 12px;font-size:13px;font-family:inherit;
   color:var(--text);background:#fff;resize:none;outline:none;
@@ -782,8 +783,8 @@ window._fbReady=true;
           <div class="sum-section-head" style="font-size:13px;padding:10px 14px;">총 일 수</div>
           <div class="sum-card-v" style="padding:22px 18px;">
             <div class="sum-value" id="sQty" style="font-size:36px;font-weight:900;">0</div>
-            <div style="border-top:1px solid var(--border);margin:10px 0 5px;"></div>
-            <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.5px;margin-bottom:4px;">현장별 일 수</div>
+            <div style="border-top:2px solid #8fa8cc;margin:12px 0 7px;"></div>
+            <div style="font-size:13px;color:var(--primary);font-weight:800;letter-spacing:.5px;margin-bottom:6px;">현장별 일 수</div>
             <div id="sSiteList" style="max-height:220px;overflow-y:auto;"></div>
           </div>
         </div>
@@ -3312,13 +3313,15 @@ function tableNavKey(e, inp){
     if(!targetRow) return;
     const targetInp = targetRow.querySelector(`[data-col="${c}"]`);
     if(!targetInp) return;
-    // readonly 셀은 enableEdit 후 setTimeout으로 포커스 보장
+    // readonly 셀 이동: blur→readonly 복귀 타이밍 이후에 enableEdit 실행
     if(targetInp.hasAttribute('readonly')){
-      enableEdit(targetInp.closest('td'));
       setTimeout(function(){
-        targetInp.focus();
-        if(targetInp.type !== 'checkbox') targetInp.select();
-      }, 20);
+        enableEdit(targetInp.closest('td'));
+        setTimeout(function(){
+          targetInp.focus();
+          if(targetInp.type !== 'checkbox') targetInp.select();
+        }, 30);
+      }, 50);
     } else {
       targetInp.focus();
       if(targetInp.type !== 'checkbox') targetInp.select();
