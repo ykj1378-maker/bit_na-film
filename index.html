@@ -414,13 +414,77 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
 @media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
-  /* 기본 레이아웃 */
-  .sum-panel { display: none !important; }
-  .table-wrap { border-left: none !important; padding: 6px 4px !important; }
-  .work-table { min-width: 480px; }
 
-  /* 테이블 헤더/셀 */
-  .work-table th { font-size: 10px !important; padding: 8px 3px !important; }
+  /* ── 콘텐츠 영역: 상하 분할 ── */
+  .content-area {
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  /* 테이블 박스: 화면 50% */
+  .table-wrap {
+    flex: 0 0 50% !important;
+    width: 100% !important;
+    border-left: none !important;
+    border-bottom: 2px solid var(--border) !important;
+    padding: 4px 3px !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    transition: flex .25s ease !important;
+  }
+
+  /* 요약 패널 박스: 화면 50% */
+  .sum-panel {
+    display: flex !important;
+    flex: 0 0 50% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border-right: none !important;
+    border-top: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    transition: flex .25s ease !important;
+  }
+
+  /* 전체화면 상태 */
+  .table-wrap.mob-expanded {
+    flex: 0 0 calc(100% - 36px) !important;
+  }
+  .table-wrap.mob-collapsed {
+    flex: 0 0 36px !important;
+    overflow: hidden !important;
+  }
+  .sum-panel.mob-expanded {
+    flex: 0 0 calc(100% - 36px) !important;
+  }
+  .sum-panel.mob-collapsed {
+    flex: 0 0 36px !important;
+    overflow: hidden !important;
+  }
+
+  /* 박스 헤더 탭 (더블탭 힌트) */
+  .mob-panel-bar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--primary);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    flex-shrink: 0;
+    user-select: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: .3px;
+  }
+  .mob-panel-bar span { font-size: 10px; opacity: .75; }
+
+  /* 테이블 */
+  .work-table { min-width: 460px; }
+  .work-table th { font-size: 10px !important; padding: 7px 3px !important; }
   .work-table td { font-size: 11px !important; padding: 5px 2px !important; }
   .work-table td input { font-size: 11px !important; }
   .editable-cell:not(.editing):not(.has-value)::after { font-size: 7px !important; }
@@ -437,9 +501,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .date-display { padding: 6px 8px !important; font-size: 11px !important; white-space: nowrap !important; }
   .tb-btn { padding: 6px 9px !important; font-size: 10px !important; white-space: nowrap !important; flex-shrink: 0 !important; }
   .search-wrap { min-width: 70px !important; max-width: 110px !important; margin-left: auto !important; margin-right: 0 !important; flex-shrink: 0 !important; }
+  #_swOuter { margin-right: 0 !important; }
   .search-wrap input { font-size: 11px !important; padding: 5px 8px 5px 26px !important; }
-
-  /* 날짜 영역 고정 너비 축소 */
   .toolbar > div:first-child { min-width: 0 !important; }
 
   /* 메뉴바 */
@@ -468,36 +531,33 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .ar-right .ar-sum-card { flex: 1 1 40% !important; }
   .ar-right > div:last-child { display: none !important; }
 
-  /* 모바일 하단 요약바 */
-  .mobile-sum-bar { display: flex !important; }
-  .msb-label { font-size: 8px !important; }
-  .msb-value { font-size: 11px !important; }
+  /* 모바일 하단 요약바 숨김 (분할화면에 요약 있으므로 불필요) */
+  .mobile-sum-bar { display: none !important; }
 
-  /* 탭바 */
-  .mobile-tab-bar { display: flex !important; }
-  .mobile-tab-bar button { font-size: 12px !important; padding: 9px 0 !important; }
-  .content-area { position: relative; }
-  .table-wrap.tab-hidden { display: none !important; }
-  .sum-panel.tab-visible {
-    display: flex !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    border-right: none !important;
-  }
+  /* 기존 탭바 숨김 */
+  .mobile-tab-bar { display: none !important; }
 
   /* 타이틀바 */
   .title-bar .t-name { font-size: 12px !important; }
 }
 
-/* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
+/* 소형 스마트폰 추가 최적화 */
 @media (hover: none) and (pointer: coarse) and (max-width: 400px) {
-  .work-table { min-width: 420px; }
+  .work-table { min-width: 400px; }
   .work-table th { font-size: 9px !important; padding: 6px 2px !important; }
   .work-table td { font-size: 10px !important; padding: 4px 1px !important; }
   .work-table td input { font-size: 10px !important; }
   .date-display { font-size: 10px !important; padding: 5px 6px !important; }
   .tb-btn { font-size: 9px !important; padding: 5px 7px !important; }
   .search-wrap { max-width: 80px !important; }
+}
+
+/* 데스크탑에서 mob-panel-bar 숨김 */
+@media not all and (hover: none) and (pointer: coarse) {
+  .mob-panel-bar { display: none !important; }
+}
+@media (min-width: 1025px) {
+  .mob-panel-bar { display: none !important; }
 }
 
 .mobile-sum-bar {
@@ -650,7 +710,7 @@ window._fbReady=true;
     </div>
     <button class="tb-btn gold" onclick="openCalc()">계산기</button>
     <button class="tb-btn blue" onclick="openLoad()">불러오기</button>
-    <div class="search-wrap" id="searchWrap" style="margin-left:auto; margin-right:460px;">
+    <div class="search-wrap" id="searchWrap" style="margin-left:auto; margin-right:460px;" id="_swOuter">
       <span class="search-icon" style="font-size:14px;color:#7A8AA0">🔍</span>
       <input type="text" id="searchInp" placeholder="검색"
         oninput="onSearch(this.value)"
@@ -670,6 +730,9 @@ window._fbReady=true;
   <div class="content-area">
     <!-- 좌측: 테이블 -->
     <div class="table-wrap" id="tableWrap">
+      <div class="mob-panel-bar" id="mobTableBar" ondblclick="mobToggleExpand('table')" title="더블탭: 전체화면">
+        <span>📋 작업 테이블</span><span>더블탭 = 전체화면</span>
+      </div>
       <table class="work-table">
         <thead>
           <tr>
@@ -689,7 +752,10 @@ window._fbReady=true;
     </div>
 
     <!-- 우측: 요약 패널 -->
-    <div class="sum-panel">
+    <div class="sum-panel" id="sumPanel">
+      <div class="mob-panel-bar" id="mobSumBar" ondblclick="mobToggleExpand('summary')" title="더블탭: 전체화면">
+        <span>📊 요약 패널</span><span>더블탭 = 전체화면</span>
+      </div>
       <div class="sum-panel-title">오늘 집계</div>
       <div class="sum-panel-body">
         <div>
@@ -1146,128 +1212,81 @@ function getDateStr(d){ return d.toISOString().split('T')[0]; }
 function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
-// ===== 모바일 탭 전환 =====
-function switchMobileTab(tab){
-  const tableWrap = document.querySelector('.table-wrap');
-  const sumPanel  = document.querySelector('.sum-panel');
-  const btnTable  = document.getElementById('tabBtnTable');
-  const btnSummary= document.getElementById('tabBtnSummary');
-  if(tab === 'summary'){
-    tableWrap.classList.add('tab-hidden');
-    sumPanel.classList.add('tab-visible');
-    btnTable.classList.remove('active');
-    btnSummary.classList.add('active');
-  } else {
-    tableWrap.classList.remove('tab-hidden');
-    sumPanel.classList.remove('tab-visible');
-    btnTable.classList.add('active');
-    btnSummary.classList.remove('active');
-  }
-}
-
-// ===== 모바일 전체창 =====
-let _mfsTapTimer = {table:null, summary:null};
-let _mfsActive = null;
+// ===== 모바일 분할화면 + 더블탭 전체화면 =====
+let _mobExpanded = null; // 'table' | 'summary' | null
 
 function isMobileDevice(){
   return (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024;
 }
 
+function mobToggleExpand(panel){
+  if(!isMobileDevice()) return;
+  const tableWrap = document.getElementById('tableWrap');
+  const sumPanel  = document.getElementById('sumPanel');
+  if(!tableWrap || !sumPanel) return;
+
+  if(_mobExpanded === panel){
+    // 이미 전체화면 → 원래 분할로 복귀
+    _mobExpanded = null;
+    tableWrap.classList.remove('mob-expanded','mob-collapsed');
+    sumPanel.classList.remove('mob-expanded','mob-collapsed');
+    // 바 텍스트 복원
+    const tBar = document.getElementById('mobTableBar');
+    const sBar = document.getElementById('mobSumBar');
+    if(tBar) tBar.querySelector('span:last-child').textContent = '더블탭 = 전체화면';
+    if(sBar) sBar.querySelector('span:last-child').textContent = '더블탭 = 전체화면';
+  } else {
+    // 전체화면 전환
+    _mobExpanded = panel;
+    if(panel === 'table'){
+      tableWrap.classList.add('mob-expanded');
+      tableWrap.classList.remove('mob-collapsed');
+      sumPanel.classList.add('mob-collapsed');
+      sumPanel.classList.remove('mob-expanded');
+      const tBar = document.getElementById('mobTableBar');
+      const sBar = document.getElementById('mobSumBar');
+      if(tBar) tBar.querySelector('span:last-child').textContent = '더블탭 = 원래화면';
+      if(sBar) sBar.querySelector('span:last-child').textContent = '더블탭 = 원래화면';
+    } else {
+      sumPanel.classList.add('mob-expanded');
+      sumPanel.classList.remove('mob-collapsed');
+      tableWrap.classList.add('mob-collapsed');
+      tableWrap.classList.remove('mob-expanded');
+      const tBar = document.getElementById('mobTableBar');
+      const sBar = document.getElementById('mobSumBar');
+      if(tBar) tBar.querySelector('span:last-child').textContent = '더블탭 = 원래화면';
+      if(sBar) sBar.querySelector('span:last-child').textContent = '더블탭 = 원래화면';
+    }
+  }
+}
+
 function initMobileFullscreen(){
   if(!isMobileDevice()) return;
-
-  // 테이블 영역 - 빈 공간(tbody) 탭
-  const tableWrap = document.getElementById('tableWrap');
-  if(tableWrap){
-    tableWrap.addEventListener('click', function(e){
-      // input, button, select 등 인터랙티브 요소 터치는 무시
-      if(e.target.closest('input,button,select,textarea,a,.editable-cell')) return;
-      openMobileFullscreen('table');
-    });
-  }
-
-  // 요약 패널 탭
-  const sumPanel = document.querySelector('.sum-panel');
-  if(sumPanel){
-    let _lastTap = 0;
-    sumPanel.addEventListener('click', function(e){
-      if(e.target.closest('textarea,input,button')) return;
-      const now = Date.now();
-      if(now - _lastTap < 350){
-        // 더블탭 → 전체창 닫기 (열려있으면)
-        closeMobileFullscreen('summary');
-        _lastTap = 0;
-        return;
-      }
-      _lastTap = now;
-      openMobileFullscreen('summary');
-    });
-  }
-
-  // 전체창 더블탭으로 닫기
-  ['mfsTable','mfsSummary'].forEach(function(id){
-    const el = document.getElementById(id);
+  // 터치 더블탭 이벤트 (모바일 dblclick 미지원 대비)
+  function addDoubleTap(el, panelType){
     if(!el) return;
-    let _last = 0;
-    el.querySelector('.mfs-content').addEventListener('click', function(e){
+    let lastTap = 0;
+    el.addEventListener('touchend', function(e){
+      // 입력 요소 제외
       if(e.target.closest('input,button,select,textarea,a,.editable-cell')) return;
       const now = Date.now();
-      if(now - _last < 350){
-        const type = id === 'mfsTable' ? 'table' : 'summary';
-        closeMobileFullscreen(type);
-        _last = 0;
-        return;
+      if(now - lastTap < 320){
+        e.preventDefault();
+        mobToggleExpand(panelType);
+        lastTap = 0;
+      } else {
+        lastTap = now;
       }
-      _last = now;
-    });
-  });
-
-  // 뒤로가기로 닫기
-  window.addEventListener('popstate', function(){
-    if(_mfsActive) closeMobileFullscreen(_mfsActive, true);
-  });
-}
-
-function openMobileFullscreen(type){
-  if(!isMobileDevice()) return;
-  if(_mfsActive === type) return;
-  _mfsActive = type;
-
-  if(type === 'table'){
-    const content = document.getElementById('mfsTableContent');
-    const src = document.getElementById('tableWrap');
-    // 테이블 복사해서 전체창에 표시
-    content.innerHTML = '';
-    const clone = src.querySelector('table').cloneNode(true);
-    clone.style.cssText = 'width:100%;border-collapse:collapse;background:#fff;min-width:520px;';
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'overflow:auto;padding:10px;';
-    wrap.appendChild(clone);
-    content.appendChild(wrap);
-    document.getElementById('mfsTable').classList.add('active');
-  } else {
-    const content = document.getElementById('mfsSummaryContent');
-    const src = document.querySelector('.sum-panel');
-    content.innerHTML = '';
-    // 요약 패널 내용 복사
-    const clone = src.cloneNode(true);
-    clone.style.cssText = 'display:block;width:100%;padding:0;border:none;';
-    clone.querySelector('.sum-panel-title') && (clone.querySelector('.sum-panel-title').style.display='none');
-    content.appendChild(clone);
-    document.getElementById('mfsSummary').classList.add('active');
+    }, {passive: false});
   }
-  history.pushState({mfs: type}, '');
+  addDoubleTap(document.getElementById('tableWrap'), 'table');
+  addDoubleTap(document.getElementById('sumPanel'),  'summary');
 }
 
-function closeMobileFullscreen(type, fromPop){
-  _mfsActive = null;
-  if(type === 'table'){
-    document.getElementById('mfsTable').classList.remove('active');
-  } else {
-    document.getElementById('mfsSummary').classList.remove('active');
-  }
-  if(!fromPop && history.state && history.state.mfs) history.back();
-}
+// 하위 호환용 (기존 switchMobileTab 호출이 있을 경우)
+function switchMobileTab(tab){ /* 분할화면 방식에서는 사용 안 함 */ }
+function openMobileFullscreen(type){ mobToggleExpand(type); }
+function closeMobileFullscreen(type){ if(_mobExpanded===type) mobToggleExpand(type); }
 
 function loadDB(){
   try{
@@ -3327,24 +3346,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-
-<!-- 모바일 전체창: 테이블 -->
-<div class="mobile-fullscreen" id="mfsTable">
-  <div class="mfs-header">
-    <span>📋 테이블</span>
-    <button class="mfs-close-btn" onclick="closeMobileFullscreen('table')">✕ 닫기</button>
-  </div>
-  <div class="mfs-content" id="mfsTableContent"></div>
-</div>
-
-<!-- 모바일 전체창: 요약 -->
-<div class="mobile-fullscreen" id="mfsSummary">
-  <div class="mfs-header">
-    <span>📊 오늘 집계</span>
-    <button class="mfs-close-btn" onclick="closeMobileFullscreen('summary')">✕ 닫기</button>
-  </div>
-  <div class="mfs-content" id="mfsSummaryContent"></div>
-</div>
 
 </body>
 </html>
