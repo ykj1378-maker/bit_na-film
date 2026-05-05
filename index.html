@@ -484,6 +484,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .mobile-tab-bar button { font-size: 12px !important; padding: 9px 0 !important; }
   .content-area { position: relative; min-height:0!important; }
   .table-wrap.tab-hidden { display: none !important; }
+  .sum-panel.tab-visible {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border-right: none !important;
+  }
 
   /* 타이틀바 */
   .title-bar .t-name { font-size: 12px !important; }
@@ -506,37 +512,31 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     flex-direction: column !important;
     overflow: hidden !important;
   }
-  /* 고정 영역 */
   .title-bar, .menu-bar, .toolbar,
   .mobile-tab-bar, .mobile-sum-bar,
   .bottom-bar { flex: 0 0 auto !important; }
-  /* 컨텐츠 영역 — 남은 공간 전부 차지 */
   .content-area {
     flex: 1 1 0 !important;
     min-height: 0 !important;
     position: relative !important;
     overflow: hidden !important;
   }
-  /* 테이블·요약 패널을 content-area 안에서 절대위치로 꽉 채움 */
+  /* 테이블·요약 패널 절대위치로 content-area 꽉 채움 → 겹침 완전 방지 */
   .table-wrap {
     position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
   .table-wrap.tab-hidden { display: none !important; }
-  /* 요약 패널 기본 숨김 */
   .sum-panel { display: none !important; }
-  /* 요약 탭 활성화 시 */
   .sum-panel.tab-visible {
     display: flex !important;
     flex-direction: column !important;
     position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
     min-width: 0 !important;
     border: none !important;
     overflow-y: auto !important;
