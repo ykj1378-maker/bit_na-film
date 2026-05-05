@@ -1222,6 +1222,7 @@ let autoTimer = null;
 let calcExpr = '';
 let _minMods = {}, _maxMods = {};
 let searchTimer = null;
+let _navigating = false;
 
 function getDateStr(d){ return d.toISOString().split('T')[0]; }
 function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
@@ -1724,6 +1725,7 @@ function enableEdit(td){
     else td.classList.remove('has-value');
   };
   inp.onblur=()=>{
+    if(_navigating) return;
     inp.setAttribute('readonly','');
     inp.style.pointerEvents='';
     td.classList.remove('editing');
@@ -3316,24 +3318,20 @@ function tableNavKey(e, inp){
     if(!targetRow) return;
     const targetInp = targetRow.querySelector(`[data-col="${c}"]`);
     if(!targetInp) return;
-    // readonly 셀 이동: onblur 임시 비활성화 후 enableEdit
+    // readonly 셀 이동: _navigating 플래그로 blur 차단
     if(targetInp.hasAttribute('readonly')){
-      const td = targetInp.closest('td');
-      // 현재 활성 셀의 onblur를 잠시 우회 (readonly 복귀 방지)
-      const prevActive = document.activeElement;
-      if(prevActive && prevActive !== targetInp){
-        const prevBlur = prevActive.onblur;
-        prevActive.onblur = null;
-        setTimeout(function(){ prevActive.onblur = prevBlur; }, 200);
-      }
-      td.classList.add('editing');
-      targetInp.removeAttribute('readonly');
-      targetInp.style.pointerEvents = 'all';
-      targetInp.focus();
-      if(targetInp.type !== 'checkbox') targetInp.select();
+      _navigating = true;
+      enableEdit(targetInp.closest('td'));
+      setTimeout(function(){
+        targetInp.focus();
+        if(targetInp.type !== 'checkbox') targetInp.select();
+        _navigating = false;
+      }, 50);
     } else {
+      _navigating = true;
       targetInp.focus();
       if(targetInp.type !== 'checkbox') targetInp.select();
+      setTimeout(function(){ _navigating = false; }, 50);
     }
   }
 
