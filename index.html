@@ -796,7 +796,7 @@ window._fbReady=true;
         <div>
           <div class="sum-section-head" style="background:linear-gradient(90deg,#1B3A6B,#2E5FA3);font-size:15px;padding:14px 18px;">총 인건비</div>
           <div class="sum-card-v" style="background:linear-gradient(135deg,#EBF2FF,#F4F6FA);border-color:#1B3A6B;padding:44px 20px;">
-            <div class="sum-value" id="sLabor" style="font-size:56px;font-weight:900;letter-spacing:-2px;">₩0</div>
+            <div class="sum-value" id="sLabor" style="font-size:46px;font-weight:900;letter-spacing:-1px;">₩0</div>
           </div>
         </div>
       </div>
@@ -1382,9 +1382,10 @@ function openMobileFullscreen(type){
     content.innerHTML = '';
     // 요약 패널 내용 복사
     const clone = src.cloneNode(true);
-    clone.style.cssText = 'display:block;width:100%;padding:0;border:none;';
+    clone.style.cssText = 'display:block;width:100%;padding:0;border:none;flex:1;overflow-y:auto;';
     clone.querySelector('.sum-panel-title') && (clone.querySelector('.sum-panel-title').style.display='none');
     content.appendChild(clone);
+    // 닫기 버튼 헤더를 mfsSummary 상단에 표시 (이미 HTML에 존재)
     document.getElementById('mfsSummary').classList.add('active');
   }
   history.pushState({mfs: type}, '');
@@ -3338,14 +3339,20 @@ function tableNavKey(e, inp){
     const nextCol = col + 1;
     if(nextCol < COLS) focusCell(rowIdx, nextCol);
   } else if(e.key === 'Enter'){
-    // Enter → 같은 컬럼 다음 행
     e.preventDefault();
-    if(rowIdx === rows.length - 1){
-      // 마지막 행이면 새 행 추가 후 이동
-      addRow();
-      setTimeout(()=>{ focusCell(rowIdx + 1, col); }, 30);
+    // 모바일 '다음': 작업자(col0) → 인건비(col1) → 수량(col2) → 현장(col3) → ... 순서로 이동
+    const nextCol = col + 1;
+    if(nextCol < COLS){
+      // 같은 행의 다음 셀로
+      focusCell(rowIdx, nextCol);
     } else {
-      focusCell(rowIdx + 1, col);
+      // 마지막 컬럼이면 다음 행 첫 번째 셀로
+      if(rowIdx === rows.length - 1){
+        addRow();
+        setTimeout(()=>{ focusCell(rowIdx + 1, 0); }, 30);
+      } else {
+        focusCell(rowIdx + 1, 0);
+      }
     }
   }
 }
@@ -3490,11 +3497,11 @@ if ('serviceWorker' in navigator) {
 
 <!-- 모바일 전체창: 요약 -->
 <div class="mobile-fullscreen" id="mfsSummary">
-  <div class="mfs-header">
+  <div class="mfs-header" style="position:sticky;top:0;z-index:10;">
     <span>📊 정보</span>
-    <button class="mfs-close-btn" onclick="closeMobileFullscreen('summary')">✕ 닫기</button>
+    <button class="mfs-close-btn" onclick="closeMobileFullscreen('summary')" style="background:rgba(255,255,255,.25);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:7px 16px;cursor:pointer;font-family:inherit;">✕ 닫기</button>
   </div>
-  <div class="mfs-content" id="mfsSummaryContent"></div>
+  <div class="mfs-content" id="mfsSummaryContent" style="flex:1;overflow-y:auto;"></div>
 </div>
 
 </body>
