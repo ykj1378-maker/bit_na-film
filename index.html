@@ -415,8 +415,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 .win-btn { display: none !important; }
 
-/* ===== 스마트폰 감지: 터치기기 + 1024px 이하 (PWA standalone 제외) ===== */
-@media screen and (max-width: 1024px) and (display-mode: browser) {
+/* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
+@media screen and (max-width: 1024px) {
   /* 전체 높이 고정 */
   html { height: -webkit-fill-available !important; }
   body { height: 100dvh !important; height: -webkit-fill-available !important; overflow: hidden !important; }
@@ -544,7 +544,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 
 /* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
-@media screen and (max-width: 400px) and (display-mode: browser) {
+@media screen and (max-width: 400px) {
   .work-table { min-width: 420px; }
   .work-table th { font-size: 9px !important; padding: 6px 2px !important; }
   .work-table td { font-size: 10px !important; padding: 4px 1px !important; }
@@ -1225,7 +1225,7 @@ let _minMods = {}, _maxMods = {};
 let searchTimer = null;
 let _navigating = false;
 
-function getDateStr(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
+function getDateStr(d){ return d.toISOString().split('T')[0]; }
 function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
@@ -1293,11 +1293,6 @@ let _mfsTapTimer = {table:null, summary:null};
 let _mfsActive = null;
 
 function isMobileDevice(){
-  // PWA standalone 모드(PC 설치 앱)에서는 모바일 레이아웃 비활성화
-  const isStandalone = window.navigator.standalone === true
-    || window.matchMedia('(display-mode: standalone)').matches
-    || window.matchMedia('(display-mode: window-controls-overlay)').matches;
-  if(isStandalone) return false;
   return window.innerWidth <= 1024;
 }
 
@@ -1477,18 +1472,8 @@ function loadDB(){
       if(ct>=lt){
         const localAccs=DB.accounts&&DB.accounts.length>0?DB.accounts.slice():[];
         const fbAccs=c.accounts&&c.accounts.length>0?c.accounts:[];
-        // ★ 로컬 records 전체 백업 (모든 날짜 데이터 보존)
-        const localRecords=DB.records?Object.assign({},DB.records):{};
         if(c.config)c.config.savePath='';
         Object.assign(DB,c);
-        if(!DB.records)DB.records={};
-        Object.keys(localRecords).forEach(function(dateKey){
-          const localRows=localRecords[dateKey]||[];
-          const fbRows=DB.records[dateKey]||[];
-          const localValid=localRows.filter(function(r){return r.name&&r.name.trim();}).length;
-          const fbValid=fbRows.filter(function(r){return r.name&&r.name.trim();}).length;
-          if(localValid>=fbValid&&localRows.length>0){DB.records[dateKey]=localRows;}
-        });
         const merged=[...fbAccs];
         localAccs.forEach(function(la){if(!merged.find(function(fa){return fa.id===la.id;}))merged.push(la);});
         DB.accounts=merged.length>0?merged:localAccs;
@@ -1546,9 +1531,7 @@ function loadDB(){
 }
 function saveDB(quiet=false){
   if(!DB.config)DB.config={};
-  // 로컬 시간 기준으로 _savedAt 기록 (UTC 오프셋 문제 방지)
-  const _now=new Date();
-  DB.config._savedAt=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0')+'T'+String(_now.getHours()).padStart(2,'0')+':'+String(_now.getMinutes()).padStart(2,'0')+':'+String(_now.getSeconds()).padStart(2,'0');
+  DB.config._savedAt=new Date().toISOString();
   const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
   localStorage.setItem('bn_db2',JSON.stringify(db));
   if(window._fbReady&&window._fbSave){
@@ -1691,10 +1674,8 @@ function appInit(){
   loadMemo();
   initMobileFullscreen();
   initMiniTabTouch();
-  // 모바일 탭 강제 초기화 (미디어쿼리 미매칭 대비) - standalone 제외
-  const _isStandalone = window.navigator.standalone === true
-    || window.matchMedia('(display-mode: standalone)').matches;
-  if(window.innerWidth <= 1024 && !_isStandalone){
+  // 모바일 탭 강제 초기화 (미디어쿼리 미매칭 대비)
+  if(window.innerWidth <= 1024){
     const tabBar = document.getElementById('mobileTabBar');
     if(tabBar) tabBar.style.display = 'flex';
     switchMobileTab('table');
@@ -1713,10 +1694,7 @@ function appInit(){
   // 화면 비율 자동 맞춤 (모바일에서는 적용 안 함)
   function autoScale(){
     // 터치 기기(모바일/태블릿)는 스케일 조정 안 함
-    // 단, standalone(PWA 설치) 모드는 PC로 처리
-    const _standalone = window.navigator.standalone === true
-      || window.matchMedia('(display-mode: standalone)').matches;
-    if(!_standalone && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) return;
+    if('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
     const BASE_W = 1280;
     const w = window.innerWidth;
     if(w < BASE_W){
