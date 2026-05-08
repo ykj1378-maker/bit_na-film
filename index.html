@@ -1123,6 +1123,16 @@ window._fbReady=true;
         </div>
       </div>
 
+      <!-- GitHub Gist 자동백업 (선택) -->
+      <div class="f-row" style="align-items:flex-start;margin-top:4px;">
+        <label style="white-space:nowrap">GitHub Gist<br><span style="font-weight:400;font-size:11px;color:var(--muted)">(자동백업)</span></label>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+          <input type="password" id="gistTokenInp" placeholder="GitHub Personal Access Token (gist 권한)" style="flex:1;color:#333;font-size:12px;">
+          <input type="text" id="gistIdInp" placeholder="Gist ID (처음엔 비워두세요 → 자동생성)" style="flex:1;color:#333;font-size:12px;">
+          <span style="font-size:10px;color:var(--muted);">※ GitHub Settings → Developer settings → Personal access tokens → gist 권한 체크</span>
+        </div>
+      </div>
+
     </div>
     <div class="modal-foot">
       <button class="btn btn-s" onclick="closeMod('pathMod')">취소</button>
@@ -1548,19 +1558,57 @@ function loadDB(){
 function saveDB(quiet=false){
   if(!DB.config)DB.config={};
   DB.config._savedAt=new Date().toISOString();
-  const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
+  const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:'',gistToken:''})});
   localStorage.setItem('bn_db2',JSON.stringify(db));
   if(window._fbReady&&window._fbSave){
     window._fbSave(db).then(function(ok){
       if(!quiet)toast(ok?'☁️':'⚠️',ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
     });
   }
+  // GitHub Gist 자동백업 (토큰 설정 시)
+  _gistBackup(db, quiet);
   if(window.pywebview&&window.pywebview.api){
     const data=JSON.stringify(db,null,2),fname='BN업무일지_'+getDateStr(new Date())+'.json';
     return window.pywebview.api.auto_save(data,fname,'','','')
       .then(function(r){return r&&r.ok?1:0;}).catch(function(){return 0;});
   }
   return Promise.resolve(true);
+}
+
+// ── GitHub Gist 자동백업 ──
+function _gistBackup(db, quiet){
+  const token = DB.config && DB.config.gistToken ? DB.config.gistToken : '';
+  if(!token) return; // 토큰 없으면 스킵
+  const gistId = DB.config && DB.config.gistId ? DB.config.gistId : '';
+  const content = JSON.stringify(db, null, 2);
+  const filename = 'BN업무일지_backup.json';
+  const body = JSON.stringify({
+    description: 'BN업무일지 자동백업 ' + getDateStr(new Date()),
+    public: false,
+    files: { [filename]: { content: content } }
+  });
+  const url    = gistId ? 'https://api.github.com/gists/' + gistId : 'https://api.github.com/gists';
+  const method = gistId ? 'PATCH' : 'POST';
+  fetch(url, {
+    method: method,
+    headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
+    body: body
+  }).then(function(r){ return r.json(); }).then(function(data){
+    if(data && data.id && !gistId){
+      // 최초 생성 시 Gist ID 자동 저장
+      DB.config.gistId = data.id;
+      localStorage.setItem('bn_db2', JSON.stringify(
+        Object.assign({}, DB, {config: Object.assign({}, DB.config, {savePath:'', savePath2:'', savePath3:''})})
+      ));
+      if(!quiet) toast('🐙','Gist 백업 생성 완료 (ID 자동저장)');
+    } else if(data && data.id){
+      if(!quiet) toast('🐙','Gist 백업 완료');
+    } else {
+      if(!quiet) toast('⚠️','Gist 백업 실패 - 토큰을 확인하세요');
+    }
+  }).catch(function(){
+    if(!quiet) toast('⚠️','Gist 백업 오류');
+  });
 }
 
 function toast(icon, msg, ms=2400){
@@ -2936,7 +2984,13 @@ function _appClose(){
       if(window.pywebview && window.pywebview.api){
         window.pywebview.api.close_window();
       } else {
-        window.close();
+        // GitHub Pages 등 브라우저 탭 닫기 (보안우회)
+        try {
+          var w = window.open('', '_self');
+          w.close();
+        } catch(e) {
+          window.close();
+        }
       }
     }, 700);
   }
@@ -2969,6 +3023,9 @@ function openPathSettings(){
     const cur3 = (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
     document.getElementById('savePathInp3').value = cur3;
   }
+  // Gist 설정 불러오기
+  document.getElementById('gistTokenInp').value = (DB.config && DB.config.gistToken) ? DB.config.gistToken : '';
+  document.getElementById('gistIdInp').value    = (DB.config && DB.config.gistId)    ? DB.config.gistId    : '';
   openMod('pathMod');
 }
 
@@ -2999,6 +3056,11 @@ function savePathSettings(){
       window.pywebview.api.set_save_path3(newPath3);
     }
   }
+  // Gist 설정 저장
+  const gistToken = document.getElementById('gistTokenInp').value.trim();
+  const gistId    = document.getElementById('gistIdInp').value.trim();
+  DB.config.gistToken = gistToken;
+  DB.config.gistId    = gistId;
   saveCurrentRows();
   saveDB(true);
   closeMod('pathMod');
@@ -3006,6 +3068,7 @@ function savePathSettings(){
   else if(newPath2) toast('✅', '저장 경로2 설정: ' + newPath2);
   else if(newPath3) toast('✅', '저장 경로3(구글드라이브) 설정: ' + newPath3);
   else toast('ℹ️', '저장 경로2·3이 비워졌습니다. 기본 경로에만 저장됩니다.');
+  if(gistToken) toast('✅', 'GitHub Gist 백업 설정 완료');
 }
 
 function openResetMod(){
