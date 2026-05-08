@@ -831,7 +831,7 @@ window._fbReady=true;
   <!-- BOTTOM -->
   <div class="bottom-bar">
     <button class="bottom-btn btn-export" onclick="openExport()">내보내기</button>
-    <button class="bottom-btn btn-save" onclick="closeAndSave()">☁️ 저장</button>
+    <button class="bottom-btn btn-save" onclick="closeAndSave()">✕ 닫기</button>
   </div>
 </div>
 
@@ -2926,8 +2926,20 @@ function closeAndSave(){saveCurrentRows();saveDB(true).finally(function(){_appCl
 function doCloseSave(){closeMod('closeSaveMod');saveCurrentRows();saveDB(true).finally(function(){_appClose();});}
 function _appClose(){
   toast('☁️','저장 완료!');
-  // 저장 후 로그인 화면으로 복귀 (PC·모바일 공통)
-  setTimeout(function(){ logout(); },700);
+  const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if(isMobile){
+    // 모바일: 기존대로 로그인 화면으로 복귀
+    setTimeout(function(){ logout(); }, 700);
+  } else {
+    // PC: 저장 후 창 닫기
+    setTimeout(function(){
+      if(window.pywebview && window.pywebview.api){
+        window.pywebview.api.close_window();
+      } else {
+        window.close();
+      }
+    }, 700);
+  }
 }
 
 // ============ PATH SETTINGS ============
