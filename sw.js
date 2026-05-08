@@ -1,43 +1,58 @@
-const CACHE_NAME = 'bn-diary-v1';
-const urlsToCache = [
+'use strict';
+
+const CACHE_NAME = 'bn-diary-v2';
+const URLS_TO_CACHE = [
   './',
   './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './icon-transparent.png'
+  './manifest.json'
 ];
 
-self.addEventListener('install', event => {
+// 설치: 핵심 파일 캐시
+self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-      .catch(() => {})
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(URLS_TO_CACHE);
+    }).catch(function() {
+      // 캐시 실패해도 SW 설치는 계속 진행
+    })
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+// 활성화: 이전 캐시 삭제
+self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then(function(keys) {
       return Promise.all(
-        cacheNames
-          .filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
+        keys.filter(function(key) { return key !== CACHE_NAME; })
+            .map(function(key) { return caches.delete(key); })
       );
+    }).then(function() {
+      return clients.claim();
     })
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', event => {
+// fetch: 네트워크 우선, 실패 시 캐시
+self.addEventListener('fetch', function(event) {
+  // POST 등 비GET 요청은 무시
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) return response;
-        return fetch(event.request).catch(() => {
-          return caches.match('./index.html');
+    fetch(event.request).then(function(response) {
+      // 유효한 응답이면 캐시에도 저장
+      if (response && response.status === 200 && response.type === 'basic') {
+        const cloned = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(event.request, cloned);
         });
-      })
+      }
+      return response;
+    }).catch(function() {
+      // 오프라인: 캐시에서 반환
+      return caches.match(event.request).then(function(cached) {
+        return cached || caches.match('./index.html');
+      });
+    })
   );
 });
