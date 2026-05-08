@@ -1236,7 +1236,14 @@ let _minMods = {}, _maxMods = {};
 let searchTimer = null;
 let _navigating = false;
 
-function getDateStr(d){ return d.toISOString().split('T')[0]; }
+function getDateStr(d){
+  // toISOString()은 UTC 기준이므로 한국(UTC+9)에서 오전 9시 전에 날짜가 하루 어긋남
+  // 로컬 시간 기준으로 YYYY-MM-DD 반환
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
 function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
@@ -1483,8 +1490,17 @@ function loadDB(){
       if(ct>=lt){
         const localAccs=DB.accounts&&DB.accounts.length>0?DB.accounts.slice():[];
         const fbAccs=c.accounts&&c.accounts.length>0?c.accounts:[];
+        // 로컬 records 백업: Firebase에 없는 날짜 데이터 보존
+        const localRecords=DB.records?Object.assign({},DB.records):{};
         if(c.config)c.config.savePath='';
         Object.assign(DB,c);
+        // records 병합: 로컬에만 있는 날짜는 유지
+        if(!DB.records)DB.records={};
+        Object.keys(localRecords).forEach(function(dateKey){
+          if(!DB.records[dateKey]||DB.records[dateKey].length===0){
+            DB.records[dateKey]=localRecords[dateKey];
+          }
+        });
         const merged=[...fbAccs];
         localAccs.forEach(function(la){if(!merged.find(function(fa){return fa.id===la.id;}))merged.push(la);});
         DB.accounts=merged.length>0?merged:localAccs;
@@ -1695,6 +1711,8 @@ function appInit(){
   setInterval(()=>{
     const newDay = getDateStr(new Date());
     if(newDay !== today){
+      saveCurrentRows(); // 기존 날짜 데이터 먼저 저장
+      saveDB(true);      // Firebase/로컬에 즉시 반영
       today = newDay;
       updateTodayLabel();
       loadTodayRows();   // 새 날짜는 빈 행으로 시작
@@ -2366,7 +2384,7 @@ function loadDateView(){
 // ============ STATS ============
 function openStats(){
   const now=new Date();
-  document.getElementById('sfrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  document.getElementById('sfrom').value=getDateStr(new Date(now.getFullYear(),now.getMonth(),1));
   document.getElementById('sto').value=today;
   calcStats();
   openMod('statsMod');
@@ -3172,7 +3190,7 @@ function openGraphMod(){
   }
   // 기본 날짜: 이번 달
   const now = new Date();
-  document.getElementById('graphFrom').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  document.getElementById('graphFrom').value = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('sv');
   document.getElementById('graphTo').value = today;
   const cards = document.getElementById('graphCards');
   if(cards) cards.innerHTML = '';
