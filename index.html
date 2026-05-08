@@ -763,6 +763,9 @@ window._fbReady=true;
       <table class="work-table">
         <thead>
           <tr>
+            <th colspan="9" id="tableDateHeader" style="background:linear-gradient(135deg,var(--primary),var(--primary-light,#2E5FA3));color:#fff;font-size:15px;font-weight:800;text-align:center;padding:10px;letter-spacing:1px;cursor:pointer;" onclick="openDatePicker()" title="날짜 선택"></th>
+          </tr>
+          <tr>
             <th style="width:36px">No</th>
             <th style="min-width:110px">작업자</th>
             <th style="min-width:100px">인건비(원)</th>
@@ -1732,8 +1735,12 @@ function updateTodayLabel(){
     span.style.cssText = 'position:relative;z-index:1;pointer-events:none;';
     lbl.insertBefore(span, lbl.firstChild);
   }
-  span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  const dateStr = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  span.textContent = dateStr;
   if(inp) inp.value = today;
+  // 테이블 헤더 날짜도 동기 업데이트
+  const th = document.getElementById('tableDateHeader');
+  if(th) th.textContent = dateStr;
 }
 
 // ============ TABLE ============
