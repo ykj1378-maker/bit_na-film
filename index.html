@@ -390,7 +390,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 
 /* ===== 모바일 로그인 최적화 ===== */
-@media (max-width: 480px) {
+/* 모바일(터치기기)에서만 로그인 박스 최적화 — PC 창 축소 시 적용 안 됨 */
+@media (hover: none) and (pointer: coarse) and (max-width: 480px) {
   .login-box {
     width: 92vw !important;
     max-width: 380px !important;
