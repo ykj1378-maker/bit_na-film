@@ -719,7 +719,6 @@ window._fbReady=true;
   <div class="toolbar">
     <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;min-width:320px;">
       <div class="date-display" id="todayLbl" onclick="openDatePicker()" title="날짜 선택" style="cursor:pointer;position:relative;">
-        <span class="lbl-text" id="todayLblText" style="position:relative;z-index:1;pointer-events:none;display:inline-block;">-</span>
         <input type="date" id="datePickerInp" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;" onchange="onDatePickerChange(this.value)">
       </div>
       <button id="btnDateClose" onclick="backToRealToday()"
@@ -1219,16 +1218,15 @@ window._fbReady=true;
 <script>
 // ============ STATE ============
 let DB = { accounts:[], workers:[], records:{}, config:{savePath:"", savePath2:"", savePath3:""} };
-
-function getDateStr(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
-function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
-
 let today = getDateStr(new Date());
 let autoTimer = null;
 let calcExpr = '';
 let _minMods = {}, _maxMods = {};
 let searchTimer = null;
 let _navigating = false;
+
+function getDateStr(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
+function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
 // ===== 모바일 탭 전환 =====
@@ -1474,12 +1472,20 @@ function loadDB(){
       if(ct>=lt){
         const localAccs=DB.accounts&&DB.accounts.length>0?DB.accounts.slice():[];
         const fbAccs=c.accounts&&c.accounts.length>0?c.accounts:[];
+        // today 키의 로컬 데이터 백업 (오늘 입력한 데이터 보존)
+        const todayKey=getDateStr(new Date());
+        const localTodayRows=DB.records&&DB.records[todayKey]?DB.records[todayKey]:null;
         if(c.config)c.config.savePath='';
         Object.assign(DB,c);
+        // 오늘 로컬 데이터가 있으면 Firebase 데이터보다 우선
+        if(localTodayRows&&localTodayRows.length>0){
+          if(!DB.records)DB.records={};
+          DB.records[todayKey]=localTodayRows;
+        }
         const merged=[...fbAccs];
         localAccs.forEach(function(la){if(!merged.find(function(fa){return fa.id===la.id;}))merged.push(la);});
         DB.accounts=merged.length>0?merged:localAccs;
-        localStorage.setItem('bn_db2',JSON.stringify(DB));today=getDateStr(new Date());updateTodayLabel();loadTodayRows();calcSummary();
+        localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();
       }
     }).catch(function(){});
   }
@@ -1533,7 +1539,9 @@ function loadDB(){
 }
 function saveDB(quiet=false){
   if(!DB.config)DB.config={};
-  DB.config._savedAt=new Date().toISOString();
+  // 로컬 시간 기준으로 _savedAt 기록 (UTC 오프셋 문제 방지)
+  const _now=new Date();
+  DB.config._savedAt=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0')+'T'+String(_now.getHours()).padStart(2,'0')+':'+String(_now.getMinutes()).padStart(2,'0')+':'+String(_now.getSeconds()).padStart(2,'0');
   const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
   localStorage.setItem('bn_db2',JSON.stringify(db));
   if(window._fbReady&&window._fbSave){
@@ -1717,9 +1725,16 @@ function appInit(){
 function updateTodayLabel(){
   const d = new Date(today + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
-  const txt = document.getElementById('todayLblText');
+  const lbl = document.getElementById('todayLbl');
   const inp = document.getElementById('datePickerInp');
-  if(txt) txt.textContent = d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+days[d.getDay()]+')';
+  let span = lbl.querySelector('.lbl-text');
+  if(!span){
+    span = document.createElement('span');
+    span.className = 'lbl-text';
+    span.style.cssText = 'position:relative;z-index:1;pointer-events:none;';
+    lbl.insertBefore(span, lbl.firstChild);
+  }
+  span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
   if(inp) inp.value = today;
 }
 
@@ -2346,7 +2361,7 @@ function loadDateView(){
 // ============ STATS ============
 function openStats(){
   const now=new Date();
-  document.getElementById('sfrom').value=getDateStr(new Date(now.getFullYear(),now.getMonth(),1));
+  document.getElementById('sfrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
   document.getElementById('sto').value=today;
   calcStats();
   openMod('statsMod');
@@ -2843,8 +2858,15 @@ function backToRealToday(){
 function _applyDateLabel(val){
   const d = new Date(val + 'T00:00:00');
   const days=['일','월','화','수','목','금','토'];
-  const txt = document.getElementById('todayLblText');
-  if(txt) txt.textContent = d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+days[d.getDay()]+')';
+  const lbl = document.getElementById('todayLbl');
+  let span = lbl.querySelector('.lbl-text');
+  if(!span){
+    span = document.createElement('span');
+    span.className = 'lbl-text';
+    span.style.cssText = 'position:relative;z-index:1;pointer-events:none;';
+    lbl.insertBefore(span, lbl.firstChild);
+  }
+  span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
 }
 
 function exitApp(){
@@ -3145,7 +3167,7 @@ function openGraphMod(){
   }
   // 기본 날짜: 이번 달
   const now = new Date();
-  document.getElementById('graphFrom').value = getDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+  document.getElementById('graphFrom').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   document.getElementById('graphTo').value = today;
   const cards = document.getElementById('graphCards');
   if(cards) cards.innerHTML = '';
@@ -3524,35 +3546,13 @@ function autoFillWorker(input) {
     }
 }
 
-// ===== 날짜 라벨 즉시 설정 =====
-(function(){
-  var n = new Date();
-  var y = n.getFullYear();
-  var mo = n.getMonth()+1;
-  var d = n.getDate();
-  var days = ['일','월','화','수','목','금','토'];
-  var dateStr = y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-  var labelTxt = y+'년 '+mo+'월 '+d+'일 ('+days[n.getDay()]+')';
-  // 전역 today 변수도 강제 갱신
-  today = dateStr;
-  var el = document.getElementById('todayLblText');
-  if(el) el.textContent = labelTxt;
-  var inp = document.getElementById('datePickerInp');
-  if(inp) inp.value = dateStr;
-})();
-
 loadDB();
 
 (function(){try{var p=(window.navigator.standalone===true)||window.matchMedia('(display-mode: standalone)').matches;if(p&&history.length<=1)history.pushState(null,'',location.href);}catch(e){}})();
 
-// ===== PWA Service Worker - 캐시 강제 갱신 =====
+// ===== PWA Service Worker =====
 if ('serviceWorker' in navigator) {
-  // 기존 SW 캐시 전체 삭제 후 재등록
   window.addEventListener('load', () => {
-    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(r => r.unregister());
-    });
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
