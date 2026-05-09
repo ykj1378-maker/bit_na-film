@@ -1511,6 +1511,31 @@ function loadDB(){
     }).catch(function(){});
   }
   if(window._fbReady){_sync();}else{setTimeout(_sync,1500);}
+  // ── GitHub Gist 동기화 (브라우저/PWA 환경) ──
+  function _gistSync(){
+    const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
+    const gistId = DB.config && DB.config.gistId ? DB.config.gistId.trim() : '';
+    if(!token || !gistId) return;
+    gistLoad().then(function(c){
+      if(!c) return;
+      const lt = DB.config&&DB.config._savedAt ? new Date(DB.config._savedAt) : new Date(0);
+      const ct = c.config&&c.config._savedAt   ? new Date(c.config._savedAt)  : new Date(0);
+      if(ct > lt){
+        const localAccs = DB.accounts&&DB.accounts.length>0 ? DB.accounts.slice() : [];
+        const gistAccs  = c.accounts&&c.accounts.length>0   ? c.accounts : [];
+        if(c.config) c.config.savePath='';
+        Object.assign(DB, c);
+        // 계정 병합 (로컬 우선)
+        const merged=[...gistAccs];
+        localAccs.forEach(function(la){ if(!merged.find(function(ga){ return ga.id===la.id; })) merged.push(la); });
+        DB.accounts = merged.length>0 ? merged : localAccs;
+        try{ localStorage.setItem('bn_db2',JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
+        loadTodayRows(); calcSummary();
+        toast('✅','GitHub에서 최신 데이터 불러옴');
+      }
+    }).catch(function(){});
+  }
+  setTimeout(_gistSync, 2000); // Firebase 동기화 이후 실행
   // 2) pywebview: 계정 먼저 로드 완료 후 업무 데이터 로드 (순서 보장)
   if(window.pywebview && window.pywebview.api){
     // ① 계정 파일 로드 완료 후 ② 업무 데이터 로드 (then 체인으로 순서 보장)
@@ -1572,12 +1597,77 @@ function saveDB(quiet=false){
       if(!quiet)toast(ok?'☁️':'⚠️',ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
     });
   }
+  // ── GitHub Gist 자동 저장 ──
+  gistSave(db, quiet);
   if(window.pywebview&&window.pywebview.api){
     const data=JSON.stringify(db,null,2),fname='BN업무일지_'+getDateStr(new Date())+'.json';
     return window.pywebview.api.auto_save(data,fname,'','','')
       .then(function(r){return r&&r.ok?1:0;}).catch(function(){return 0;});
   }
   return Promise.resolve(true);
+}
+
+// ── GitHub Gist 저장 (PATCH: 기존 Gist 수정 / POST: 새 Gist 생성) ──
+async function gistSave(db, quiet){
+  const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
+  if(!token) return; // 설정 안 됐으면 스킵
+  const payload = JSON.stringify(db, null, 2);
+  const body = { files:{ 'bn_data.json':{ content: payload } } };
+  try{
+    let res, gistId = DB.config.gistId ? DB.config.gistId.trim() : '';
+    if(gistId){
+      // 기존 Gist 수정
+      res = await fetch('https://api.github.com/gists/'+gistId, {
+        method:'PATCH',
+        headers:{ 'Authorization':'token '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify(body)
+      });
+    } else {
+      // 새 Gist 생성
+      res = await fetch('https://api.github.com/gists', {
+        method:'POST',
+        headers:{ 'Authorization':'token '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify(Object.assign({ description:'BN업무일지 자동백업', public:false }, body))
+      });
+      if(res.ok){
+        const json = await res.json();
+        DB.config.gistId = json.id; // 생성된 Gist ID 자동 저장
+        // localStorage에도 gistId 반영
+        try{ localStorage.setItem('bn_db2', JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
+        if(!quiet) toast('✅','GitHub Gist 생성 완료! ID: '+json.id);
+        return;
+      }
+    }
+    if(res && res.ok){
+      if(!quiet) toast('✅','GitHub 자동저장 완료 ✓');
+    } else {
+      const errJson = res ? await res.json().catch(()=>({})) : {};
+      if(!quiet) toast('⚠️','GitHub 저장 실패: '+(errJson.message||res.status));
+    }
+  }catch(e){
+    if(!quiet) toast('⚠️','GitHub 저장 오류: '+e.message);
+  }
+}
+
+// ── GitHub Gist 불러오기 ──
+async function gistLoad(){
+  const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
+  const gistId = DB.config && DB.config.gistId ? DB.config.gistId.trim() : '';
+  if(!token || !gistId) return null;
+  try{
+    const res = await fetch('https://api.github.com/gists/'+gistId, {
+      headers:{ 'Authorization':'token '+token }
+    });
+    if(!res.ok) return null;
+    const json = await res.json();
+    const file = json.files && json.files['bn_data.json'];
+    if(!file) return null;
+    // truncated 파일은 raw_url로 다시 받기
+    const content = file.truncated
+      ? await (await fetch(file.raw_url)).text()
+      : file.content;
+    return content ? JSON.parse(content) : null;
+  }catch(e){ return null; }
 }
 
 function toast(icon, msg, ms=2400){
@@ -2970,7 +3060,12 @@ function saveGistSettings(){
   DB.config.gistId = gistId;
   saveDB(true);
   closeMod('pathMod');
-  toast('✅','GitHub Gist 설정이 저장되었습니다.');
+  toast('✅','GitHub Gist 설정 저장 — 자동저장 테스트 중...');
+  // 설정 직후 즉시 저장 테스트
+  setTimeout(function(){
+    const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
+    gistSave(db, false);
+  }, 400);
 }
 
 function openResetMod(){
