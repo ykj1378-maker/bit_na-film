@@ -88,7 +88,7 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 .login-err{color:var(--danger);font-size:12px;margin-top:6px;min-height:18px;padding:0 36px 16px;}
 
 /* APP */
-#app{display:flex;flex-direction:column;height:100vh;}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
 /* TITLE BAR */
 .title-bar{background:var(--primary);color:#fff;display:flex;align-items:center;padding:0 14px;height:44px;user-select:none;flex-shrink:0;-webkit-app-region:drag;align-items:flex-end;padding-bottom:8px;}
@@ -181,7 +181,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* MAIN CONTENT AREA - 좌우 레이아웃 */
 .content-area {
-  flex:1;display:flex;flex-direction:row;overflow:hidden;
+  flex:1;min-height:0;display:flex;flex-direction:row;overflow:hidden;
 }
 .table-wrap {
   flex:1;overflow:auto;padding:14px 16px;
@@ -428,14 +428,21 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 /* ===== 스마트폰/터치기기 전용 (PC에서 창 크기와 무관하게 적용 안 됨) ===== */
 @media (hover: none) and (pointer: coarse) {
   /* ── 전체 앱 높이 구조 ── */
-  html, body {
+  html {
     height: 100dvh !important;
     height: -webkit-fill-available !important;
     overflow: hidden !important;
   }
+  body {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    overflow: hidden !important;
+    max-height: 100dvh !important;
+  }
   #app {
     height: 100dvh !important;
     height: -webkit-fill-available !important;
+    max-height: 100dvh !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -513,7 +520,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     flex: 1 1 0 !important;
     min-height: 0 !important;
     width: 100% !important;
-    height: 100% !important;
     position: static !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
@@ -597,6 +603,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   background: #fff;
   border-top: 2px solid var(--border);
   flex-shrink: 0;
+  overflow: hidden;
 }
 .mobile-sum-grid {
   display: grid;
