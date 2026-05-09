@@ -1892,7 +1892,7 @@ function addRow(silent=false, d={}){
       <input type="text" data-col="0" value="${d.name||''}" readonly placeholder="" enterkeyhint="next" oninput="autoFillWorker(this)" onkeydown="tableNavKey(event,this)">
     </td>
     <td class="editable-cell ${hasWage}" ondblclick="enableEdit(this)">
-      <input type="number" data-col="1" value="${d.wage||''}" placeholder="" min="0" enterkeyhint="next" oninput="var _td=this.closest('td');if(this.value.trim()){_td.classList.add('has-value');}else{_td.classList.remove('has-value');}rowChange();" onchange="rowChange()" onkeydown="tableNavKey(event,this)">
+      <input type="number" data-col="1" value="${d.wage||''}" placeholder="" min="0" enterkeyhint="next" oninput="(function(inp){var tr=inp.closest('tr');var td=inp.closest('td');if(inp.value.trim()){td.classList.add('has-value');}else{td.classList.remove('has-value');}var ins=tr.querySelectorAll('input:not([type=checkbox])');var workerName=ins[0]?ins[0].value.trim():'';if(workerName&&inp.value.trim()&&ins[2]&&(!ins[2].value||parseFloat(ins[2].value)===0)){ins[2].value='1';}rowChange();})(this);" onchange="rowChange()" onkeydown="tableNavKey(event,this)">
     </td>
     <td><input type="number" data-col="2" value="${d.qty||''}" placeholder="0" step="0.5" min="0" enterkeyhint="next" oninput="rowQtyChange(this)" onchange="rowChange()" onkeydown="tableNavKey(event,this)"></td>
     <td style="position:relative"><input type="text" data-col="3" class="site-inp" value="${d.site||''}" placeholder="" oninput="showSiteBalloon(this)" onblur="hideSiteBalloon(this)" enterkeyhint="next" onkeydown="siteKeyNav(event,this);tableNavKey(event,this)" onchange="rowChange()"></td>
@@ -3635,8 +3635,22 @@ function autoFillWorker(input) {
     if (worker) {
         const ins = currentTr.querySelectorAll('input:not([type=checkbox])');
         ins[1].value = worker.wage || '';
-        // 작업자 입력 시에만 일 수 자동 1 (작업자란이 비어있지 않을 때)
+        if(ins[1].value.trim()){
+          const wageTd = ins[1].closest('td');
+          if(wageTd) wageTd.classList.add('has-value');
+        }
+        // 작업자 입력 시 일 수 자동 1
+        if(ins[2] && (!ins[2].value || parseFloat(ins[2].value)===0)){
+          ins[2].value = '1';
+        }
         updateRowLabor(currentTr);
+        rowChange();
+    } else {
+        // DB에 없는 신규 작업자: 이름만 입력돼도 일 수 자동 1
+        const ins = currentTr.querySelectorAll('input:not([type=checkbox])');
+        if(ins[2] && (!ins[2].value || parseFloat(ins[2].value)===0)){
+          ins[2].value = '1';
+        }
         rowChange();
     }
 }
