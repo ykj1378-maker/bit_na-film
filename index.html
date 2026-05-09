@@ -2921,22 +2921,11 @@ function _appClose(){
   toast('☁️','저장 완료!');
   const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   if(isMobile){
-    // 모바일: 기존대로 로그인 화면으로 복귀
+    // 모바일: 로그인 화면으로 복귀
     setTimeout(function(){ logout(); }, 700);
   } else {
-    // PC: 저장 후 창 닫기
-    setTimeout(function(){
-      if(window.pywebview && window.pywebview.api){
-        window.pywebview.api.close_window();
-      } else {
-        // GitHub Pages: 빈 페이지로 이동 후 닫기 (보안정책 우회)
-        var closed = false;
-        try { window.open('','_self',''); window.close(); closed = true; } catch(e){}
-        if(!closed){
-          try { window.location.href = 'about:blank'; } catch(e){}
-        }
-      }
-    }, 700);
+    // PC: 저장 후 로그인 화면으로 복귀
+    setTimeout(function(){ logout(); }, 700);
   }
 }
 
