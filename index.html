@@ -1562,7 +1562,11 @@ function saveDB(quiet=false){
   if(!DB.config)DB.config={};
   DB.config._savedAt=new Date().toISOString();
   const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
-  localStorage.setItem('bn_db2',JSON.stringify(db));
+  try{
+    localStorage.setItem('bn_db2',JSON.stringify(db));
+  }catch(e){
+    if(!quiet) toast('⚠️','저장공간 초과 — 로컬 저장 실패');
+  }
   if(window._fbReady&&window._fbSave){
     window._fbSave(db).then(function(ok){
       if(!quiet)toast(ok?'☁️':'⚠️',ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
@@ -1709,8 +1713,9 @@ function appInit(){
     if(tabBar) tabBar.style.display = 'flex';
     switchMobileTab('table');
   }
-  // 날짜 변경 감지: 자정이 지나면 새 날짜로 초기화
-  setInterval(()=>{
+  // 날짜 변경 감지: 자정이 지나면 새 날짜로 초기화 (재호출 시 중복 방지)
+  if(window._dateCheckInterval) clearInterval(window._dateCheckInterval);
+  window._dateCheckInterval = setInterval(()=>{
     const newDay = getDateStr(new Date());
     if(newDay !== today){
       saveCurrentRows(); // 기존 날짜 데이터 먼저 저장
@@ -1957,10 +1962,10 @@ function saveCurrentRows(){
     const ins=tr.querySelectorAll('input:not([type=checkbox])');
     // ins[0]=작업자 ins[1]=인건비 ins[2]=수량 ins[3]=현장명 ins[4]=비고 ins[5]=지출(원) ins[6]=지출내용
     data.push({
-      name:ins[0].value, wage:ins[1].value,
-      qty:ins[2].value, site:ins[3].value,
-      note:ins[4].value, material:ins[5].value,
-      materialNote:ins[6].value
+      name:ins[0]?ins[0].value:'', wage:ins[1]?ins[1].value:'',
+      qty:ins[2]?ins[2].value:'', site:ins[3]?ins[3].value:'',
+      note:ins[4]?ins[4].value:'', material:ins[5]?ins[5].value:'',
+      materialNote:ins[6]?ins[6].value:''
     });
     // 작업자 이름이 있으면 작업자 목록에 자동 등록 (중복 없이)
     const wName = ins[0].value.trim();
@@ -2837,8 +2842,7 @@ function addAcc(){
   if(!id||!pw){ showAlert('입력 오류','아이디와 비밀번호를 모두 입력하세요.','⚠️'); return; }
   if(DB.accounts.find(a=>a.id===id)){ showAlert('중복','이미 존재하는 아이디입니다.','⚠️'); return; }
   DB.accounts.push({id,pw});
-  syncAccounts();  // 계정 파일에 즉시 저장
-  saveDB(true);
+  syncAccounts();  // 계정 파일에 즉시 저장 (내부에서 saveDB 호출됨)
   renderAccList();
   document.getElementById('naid').value=''; document.getElementById('napw').value='';
   toast('✅','계정 추가 완료!');
@@ -2849,8 +2853,7 @@ function delAcc(i){
     return;
   }
   DB.accounts.splice(i,1);
-  syncAccounts();
-  saveDB(true);
+  syncAccounts();  // 내부에서 saveDB 호출됨
   renderAccList();
   toast('🗑️','계정이 삭제되었습니다.');
 }
