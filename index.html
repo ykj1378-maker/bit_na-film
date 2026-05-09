@@ -1244,6 +1244,7 @@ window._fbReady=true;
 let DB = { accounts:[], workers:[], records:{}, config:{savePath:"", savePath2:"", savePath3:"", gistToken:"", gistId:""} };
 let today = getDateStr(new Date());
 let autoTimer = null;
+let _gistTimer = null; // Gist 저장 전용 타이머 (60초 디바운스)
 let calcExpr = '';
 let _minMods = {}, _maxMods = {};
 let searchTimer = null;
@@ -1597,8 +1598,7 @@ function saveDB(quiet=false){
       if(!quiet)toast(ok?'☁️':'⚠️',ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
     });
   }
-  // ── GitHub Gist 자동 저장 ──
-  gistSave(db, quiet);
+  // ── GitHub Gist 자동 저장은 schedSave의 별도 타이머로 관리 (60초) ──
   if(window.pywebview&&window.pywebview.api){
     const data=JSON.stringify(db,null,2),fname='BN업무일지_'+getDateStr(new Date())+'.json';
     return window.pywebview.api.auto_save(data,fname,'','','')
@@ -2292,6 +2292,12 @@ function tableWageInput(input){
 function schedSave(){
   clearTimeout(autoTimer);
   autoTimer=setTimeout(()=>saveDB(true),3000);
+  // Gist는 60초 디바운스 — 입력 중 반복 API 호출 방지
+  clearTimeout(_gistTimer);
+  _gistTimer=setTimeout(()=>{
+    const db=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
+    gistSave(db, true);
+  },60000);
 }
 
 // ============ MENU ============
