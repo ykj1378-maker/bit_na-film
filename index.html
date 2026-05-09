@@ -88,7 +88,7 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 .login-err{color:var(--danger);font-size:12px;margin-top:6px;min-height:18px;padding:0 36px 16px;}
 
 /* APP */
-#app{display:flex;flex-direction:column;height:100vh;}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
 /* TITLE BAR */
 .title-bar{background:var(--primary);color:#fff;display:flex;align-items:center;padding:0 14px;height:44px;user-select:none;flex-shrink:0;-webkit-app-region:drag;align-items:flex-end;padding-bottom:8px;}
@@ -181,7 +181,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* MAIN CONTENT AREA - 좌우 레이아웃 */
 .content-area {
-  flex:1;display:flex;flex-direction:row;overflow:hidden;
+  flex:1;min-height:0;display:flex;flex-direction:row;overflow:hidden;
 }
 .table-wrap {
   flex:1;overflow:auto;padding:14px 16px;
@@ -390,7 +390,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 }
 
 /* ===== 모바일 로그인 최적화 ===== */
-@media (max-width: 480px) {
+/* 모바일(터치기기)에서만 로그인 박스 최적화 — PC 창 축소 시 적용 안 됨 */
+@media screen and (max-width: 480px) {
   .login-box {
     width: 92vw !important;
     max-width: 380px !important;
@@ -424,17 +425,35 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .win-btn { display: none !important; }
 
 /* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
+/* ===== 모바일 전용 (max-width: 1024px) ===== */
 @media screen and (max-width: 1024px) {
-  /* 전체 높이 고정 */
-  html { height: -webkit-fill-available !important; }
-  body { height: 100dvh !important; height: -webkit-fill-available !important; overflow: hidden !important; }
-  #app { height: 100dvh !important; height: -webkit-fill-available !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+  /* ── html: iOS/Android Safari 호환 ── */
+  html {
+    height: -webkit-fill-available !important;
+  }
+  /* ── body/#app: 100dvh(주소창 제외) + -webkit-fill-available 폴백 ── */
+  body {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    overflow: hidden !important;
+  }
+  #app {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
 
-  /* 상단 고정 영역 */
-  .title-bar, .menu-bar, .toolbar { flex: 0 0 auto !important; }
+  /* ── 고정 영역: flex-shrink:0 으로 줄어들지 않게 ── */
+  .title-bar, .menu-bar, .toolbar, .mobile-tab-bar, .mobile-sum-bar, .bottom-bar {
+    flex-shrink: 0 !important;
+    flex: 0 0 auto !important;
+  }
   .title-bar .t-name { font-size: 12px !important; }
 
-  /* 툴바 */
+  /* ── 툴바 ── */
   .toolbar { padding: 4px 6px !important; gap: 4px !important; flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
   .toolbar::-webkit-scrollbar { display: none !important; }
   .date-display { padding: 6px 8px !important; font-size: 11px !important; white-space: nowrap !important; }
@@ -443,7 +462,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .search-wrap input { font-size: 11px !important; padding: 5px 8px 5px 26px !important; }
   .toolbar > div:first-child { min-width: 0 !important; }
 
-  /* 메뉴바 */
+  /* ── 메뉴바 ── */
   .menu-bar { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; white-space: nowrap !important; }
   .menu-bar::-webkit-scrollbar { display: none !important; }
   .menu-btn { padding: 5px 8px !important; font-size: 11px !important; }
@@ -451,7 +470,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   /* ── 미니탭바 ── */
   .mobile-tab-bar {
     display: flex !important;
-    flex: 0 0 auto !important;
     background: var(--bg) !important;
     border-bottom: 2px solid var(--border) !important;
     padding: 5px 8px !important;
@@ -484,24 +502,19 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .mobile-tab-bar button .mtab-label { font-size: 10px !important; opacity: .85; }
   .mobile-tab-bar button.active .mtab-label { color: rgba(255,255,255,.9) !important; }
 
-  /* ── 하단 고정 영역 ── */
-  .mobile-sum-bar { display: flex !important; flex: 0 0 auto !important; }
-  .msb-label { font-size: 8px !important; }
-  .msb-value { font-size: 11px !important; }
-  .bottom-bar { flex: 0 0 auto !important; padding: 5px 8px !important; padding-bottom: calc(5px + var(--safe-bot)) !important; }
-  .bottom-btn { padding: 7px 12px !important; font-size: 11px !important; }
-
-  /* ── 컨텐츠 영역: 탭·패널 절대위치로 겹침 완전 방지 ── */
+  /* ── 컨텐츠 영역: 남은 공간 정확히 채움 ── */
   .content-area {
     flex: 1 1 0 !important;
     min-height: 0 !important;
-    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
     overflow: hidden !important;
   }
+  /* ── 테이블 래퍼: flex 컨테이너 안에서 스크롤 올바르게 ── */
   .table-wrap {
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
     border-left: none !important;
@@ -515,14 +528,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .editable-cell:not(.editing):not(.has-value)::after { content: '' !important; display: none !important; }
   .editable-cell input { pointer-events: all !important; cursor: text !important; }
 
-  /* 요약패널: 기본 숨김, tab-visible 시 절대위치로 꽉 채움 */
+  /* ── 요약패널 ── */
   .sum-panel { display: none !important; }
   .sum-panel.tab-visible {
     display: flex !important;
     flex-direction: column !important;
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
     min-width: 0 !important;
     border: none !important;
     overflow-y: auto !important;
@@ -530,14 +543,24 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     background: #fff !important;
   }
 
-  /* 모달 */
+  /* ── 하단 고정 ── */
+  .mobile-sum-bar { display: flex !important; }
+  .msb-label { font-size: 8px !important; }
+  .msb-value { font-size: 11px !important; }
+  .bottom-bar {
+    padding: 5px 8px !important;
+    padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .bottom-btn { padding: 7px 12px !important; font-size: 11px !important; }
+
+  /* ── 모달 ── */
   .modal { max-width: 98vw !important; max-height: 90vh !important; }
   .modal-body { padding: 10px 8px !important; }
   .f-row { flex-wrap: wrap !important; }
   .f-row label { min-width: 60px !important; font-size: 11px !important; }
   .f-row input, .f-row select { font-size: 14px !important; padding: 8px 10px !important; }
 
-  /* 행 추가 모달 */
+  /* ── 행 추가 모달 ── */
   #addRowMod .modal { flex-direction: column !important; }
   .ar-left { flex: 1 !important; overflow-y: auto !important; }
   .ar-body { padding: 10px 12px !important; }
@@ -551,7 +574,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 
 
-/* 소형 스마트폰 추가 최적화 (화면 좁을 때) */
+/* 소형 스마트폰 추가 최적화 */
 @media screen and (max-width: 400px) {
   .work-table { min-width: 420px; }
   .work-table th { font-size: 9px !important; padding: 6px 2px !important; }
@@ -567,6 +590,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   background: #fff;
   border-top: 2px solid var(--border);
   flex-shrink: 0;
+  overflow: hidden;
 }
 .mobile-sum-grid {
   display: grid;
@@ -829,7 +853,7 @@ window._fbReady=true;
   <!-- BOTTOM -->
   <div class="bottom-bar">
     <button class="bottom-btn btn-export" onclick="openExport()">내보내기</button>
-    <button class="bottom-btn btn-save" onclick="closeAndSave()">☁️ 저장</button>
+    <button class="bottom-btn btn-save" onclick="closeAndSave()">✕ 닫기</button>
   </div>
 </div>
 
@@ -1085,46 +1109,38 @@ window._fbReady=true;
   </div>
 </div>
 
-<!-- PATH SETTINGS -->
+<!-- GitHub Gist 설정 -->
 <div class="modal-overlay" id="pathMod">
-  <div class="modal" style="--mw:440px">
-    <div class="modal-head"><h3>경로저장설정</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('pathMod')">&#x2715;</button></div></div>
-    <div class="modal-body" style="gap:14px">
+  <div class="modal" style="--mw:460px">
+    <div class="modal-head"><h3>GitHub Gist 설정</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('pathMod')">&#x2715;</button></div></div>
+    <div class="modal-body" style="gap:18px">
 
-      <!-- 기본 저장 경로 (읽기전용 표시) -->
-      <div class="f-row" style="align-items:center">
-        <label style="white-space:nowrap">기본 저장 경로</label>
-        <div style="flex:1;background:#f4f6fa;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:#1B3A6B;font-weight:600;word-break:break-all">
-          <span id="defaultPathLabel">내문서\BN업무일지</span>
-        </div>
+      <!-- GitHub Token -->
+      <div class="f-row" style="flex-direction:column;gap:6px">
+        <label style="font-weight:700;font-size:13px;color:var(--primary)">🔑 GitHub Token
+          <span style="font-weight:400;font-size:11px;color:var(--muted);margin-left:6px">(Personal Access Token)</span>
+        </label>
+        <input type="password" id="gistTokenInp"
+          placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          style="width:100%;font-size:13px;letter-spacing:1px;color:#333;box-sizing:border-box;">
+        <span style="font-size:11px;color:var(--muted)">GitHub → Settings → Developer settings → Personal access tokens → gist 권한 필요</span>
       </div>
 
-      <!-- 저장 경로 2 (선택) -->
-      <div class="f-row" style="align-items:center">
-        <label style="white-space:nowrap">저장 경로 2<br><span style="font-weight:400;font-size:11px;color:var(--muted)">(선택)</span></label>
-        <div style="display:flex;gap:6px;flex:1;align-items:center">
-          <input type="text" id="savePathInp2" placeholder="두 번째 저장 경로 입력" style="flex:1;color:#333;">
-          <button onclick="browseFolder(2)" title="폴더 선택"
-            style="width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;padding:0"
-            onmouseover="this.style.background='#dde8f8'" onmouseout="this.style.background='#f4f6fa'">📁</button>
-        </div>
-      </div>
-
-      <!-- 저장 경로 3 - 구글드라이브 (선택) -->
-      <div class="f-row" style="align-items:center">
-        <label style="white-space:nowrap">저장 경로 3<br><span style="font-weight:400;font-size:11px;color:var(--muted)">(구글드라이브)</span></label>
-        <div style="display:flex;gap:6px;flex:1;align-items:center">
-          <input type="text" id="savePathInp3" placeholder="Google Drive 폴더 경로 입력" style="flex:1;color:#333;">
-          <button onclick="browseFolder(3)" title="폴더 선택"
-            style="width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;padding:0"
-            onmouseover="this.style.background='#dde8f8'" onmouseout="this.style.background='#f4f6fa'">📁</button>
-        </div>
+      <!-- Gist ID -->
+      <div class="f-row" style="flex-direction:column;gap:6px">
+        <label style="font-weight:700;font-size:13px;color:var(--primary)">📄 Gist ID
+          <span style="font-weight:400;font-size:11px;color:var(--muted);margin-left:6px">(선택 — 비우면 새로 생성)</span>
+        </label>
+        <input type="text" id="gistIdInp"
+          placeholder="예) a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+          style="width:100%;font-size:13px;color:#333;box-sizing:border-box;">
+        <span style="font-size:11px;color:var(--muted)">저장 후 생성된 Gist ID가 자동 기록됩니다</span>
       </div>
 
     </div>
     <div class="modal-foot">
       <button class="btn btn-s" onclick="closeMod('pathMod')">취소</button>
-      <button class="btn btn-p" onclick="savePathSettings()">저장</button>
+      <button class="btn btn-p" onclick="saveGistSettings()">저장</button>
     </div>
   </div>
 </div>
@@ -1225,7 +1241,7 @@ window._fbReady=true;
 
 <script>
 // ============ STATE ============
-let DB = { accounts:[], workers:[], records:{}, config:{savePath:"", savePath2:"", savePath3:""} };
+let DB = { accounts:[], workers:[], records:{}, config:{savePath:"", savePath2:"", savePath3:"", gistToken:"", gistId:""} };
 let today = getDateStr(new Date());
 let autoTimer = null;
 let calcExpr = '';
@@ -1233,7 +1249,12 @@ let _minMods = {}, _maxMods = {};
 let searchTimer = null;
 let _navigating = false;
 
-function getDateStr(d){ return d.toISOString().split('T')[0]; }
+function getDateStr(d){
+  // toISOString()은 UTC 기준 → 한국(UTC+9) 오전 9시 전에 날짜가 하루 어긋남
+  // 로컬 시간 기준으로 YYYY-MM-DD 반환
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
 function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
 
 // STORAGE
@@ -1490,6 +1511,31 @@ function loadDB(){
     }).catch(function(){});
   }
   if(window._fbReady){_sync();}else{setTimeout(_sync,1500);}
+  // ── GitHub Gist 동기화 (브라우저/PWA 환경) ──
+  function _gistSync(){
+    const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
+    const gistId = DB.config && DB.config.gistId ? DB.config.gistId.trim() : '';
+    if(!token || !gistId) return;
+    gistLoad().then(function(c){
+      if(!c) return;
+      const lt = DB.config&&DB.config._savedAt ? new Date(DB.config._savedAt) : new Date(0);
+      const ct = c.config&&c.config._savedAt   ? new Date(c.config._savedAt)  : new Date(0);
+      if(ct > lt){
+        const localAccs = DB.accounts&&DB.accounts.length>0 ? DB.accounts.slice() : [];
+        const gistAccs  = c.accounts&&c.accounts.length>0   ? c.accounts : [];
+        if(c.config) c.config.savePath='';
+        Object.assign(DB, c);
+        // 계정 병합 (로컬 우선)
+        const merged=[...gistAccs];
+        localAccs.forEach(function(la){ if(!merged.find(function(ga){ return ga.id===la.id; })) merged.push(la); });
+        DB.accounts = merged.length>0 ? merged : localAccs;
+        try{ localStorage.setItem('bn_db2',JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
+        loadTodayRows(); calcSummary();
+        toast('✅','GitHub에서 최신 데이터 불러옴');
+      }
+    }).catch(function(){});
+  }
+  setTimeout(_gistSync, 2000); // Firebase 동기화 이후 실행
   // 2) pywebview: 계정 먼저 로드 완료 후 업무 데이터 로드 (순서 보장)
   if(window.pywebview && window.pywebview.api){
     // ① 계정 파일 로드 완료 후 ② 업무 데이터 로드 (then 체인으로 순서 보장)
@@ -1541,18 +1587,87 @@ function saveDB(quiet=false){
   if(!DB.config)DB.config={};
   DB.config._savedAt=new Date().toISOString();
   const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
-  localStorage.setItem('bn_db2',JSON.stringify(db));
+  try{
+    localStorage.setItem('bn_db2',JSON.stringify(db));
+  }catch(e){
+    if(!quiet) toast('⚠️','저장공간 초과 — 로컬 저장 실패');
+  }
   if(window._fbReady&&window._fbSave){
     window._fbSave(db).then(function(ok){
       if(!quiet)toast(ok?'☁️':'⚠️',ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
     });
   }
+  // ── GitHub Gist 자동 저장 ──
+  gistSave(db, quiet);
   if(window.pywebview&&window.pywebview.api){
     const data=JSON.stringify(db,null,2),fname='BN업무일지_'+getDateStr(new Date())+'.json';
     return window.pywebview.api.auto_save(data,fname,'','','')
       .then(function(r){return r&&r.ok?1:0;}).catch(function(){return 0;});
   }
   return Promise.resolve(true);
+}
+
+// ── GitHub Gist 저장 (PATCH: 기존 Gist 수정 / POST: 새 Gist 생성) ──
+async function gistSave(db, quiet){
+  const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
+  if(!token) return; // 설정 안 됐으면 스킵
+  const payload = JSON.stringify(db, null, 2);
+  const body = { files:{ 'bn_data.json':{ content: payload } } };
+  try{
+    let res, gistId = DB.config.gistId ? DB.config.gistId.trim() : '';
+    if(gistId){
+      // 기존 Gist 수정
+      res = await fetch('https://api.github.com/gists/'+gistId, {
+        method:'PATCH',
+        headers:{ 'Authorization':'token '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify(body)
+      });
+    } else {
+      // 새 Gist 생성
+      res = await fetch('https://api.github.com/gists', {
+        method:'POST',
+        headers:{ 'Authorization':'token '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify(Object.assign({ description:'BN업무일지 자동백업', public:false }, body))
+      });
+      if(res.ok){
+        const json = await res.json();
+        DB.config.gistId = json.id; // 생성된 Gist ID 자동 저장
+        // localStorage에도 gistId 반영
+        try{ localStorage.setItem('bn_db2', JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
+        if(!quiet) toast('✅','GitHub Gist 생성 완료! ID: '+json.id);
+        return;
+      }
+    }
+    if(res && res.ok){
+      if(!quiet) toast('✅','GitHub 자동저장 완료 ✓');
+    } else {
+      const errJson = res ? await res.json().catch(()=>({})) : {};
+      if(!quiet) toast('⚠️','GitHub 저장 실패: '+(errJson.message||res.status));
+    }
+  }catch(e){
+    if(!quiet) toast('⚠️','GitHub 저장 오류: '+e.message);
+  }
+}
+
+// ── GitHub Gist 불러오기 ──
+async function gistLoad(){
+  const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
+  const gistId = DB.config && DB.config.gistId ? DB.config.gistId.trim() : '';
+  if(!token || !gistId) return null;
+  try{
+    const res = await fetch('https://api.github.com/gists/'+gistId, {
+      headers:{ 'Authorization':'token '+token }
+    });
+    if(!res.ok) return null;
+    const json = await res.json();
+    const file = json.files && json.files['bn_data.json'];
+    if(!file) return null;
+    // truncated 파일은 raw_url로 다시 받기
+    const content = file.truncated
+      ? await (await fetch(file.raw_url)).text()
+      : file.content;
+    return content ? JSON.parse(content) : null;
+  }catch(e){ return null; }
 }
 
 function toast(icon, msg, ms=2400){
@@ -1688,10 +1803,13 @@ function appInit(){
     if(tabBar) tabBar.style.display = 'flex';
     switchMobileTab('table');
   }
-  // 날짜 변경 감지: 자정이 지나면 새 날짜로 초기화
-  setInterval(()=>{
+  // 날짜 변경 감지: 자정이 지나면 새 날짜로 초기화 (재호출 시 중복 방지)
+  if(window._dateCheckInterval) clearInterval(window._dateCheckInterval);
+  window._dateCheckInterval = setInterval(()=>{
     const newDay = getDateStr(new Date());
     if(newDay !== today){
+      saveCurrentRows(); // 기존 날짜 데이터 먼저 저장
+      saveDB(true);      // Firebase·로컬에 즉시 반영
       today = newDay;
       updateTodayLabel();
       loadTodayRows();   // 새 날짜는 빈 행으로 시작
@@ -1699,6 +1817,20 @@ function appInit(){
     }
   }, 30000); // 30초마다 체크
   window.addEventListener('beforeunload',()=>{ saveCurrentRows(); saveDB(false); });
+  // 백그라운드에서 자정 넘긴 후 복귀 시 즉시 날짜 갱신
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible'){
+      const newDay = getDateStr(new Date());
+      if(newDay !== today){
+        saveCurrentRows();
+        saveDB(true);
+        today = newDay;
+        updateTodayLabel();
+        loadTodayRows();
+        calcSummary();
+      }
+    }
+  });
   // 화면 비율 자동 맞춤 (모바일에서는 적용 안 함)
   function autoScale(){
     // 터치 기기(모바일/태블릿)는 스케일 조정 안 함
@@ -1732,7 +1864,8 @@ function updateTodayLabel(){
     span.style.cssText = 'position:relative;z-index:1;pointer-events:none;';
     lbl.insertBefore(span, lbl.firstChild);
   }
-  span.textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  const dateStr = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  span.textContent = dateStr;
   if(inp) inp.value = today;
 }
 
@@ -1759,7 +1892,7 @@ function addRow(silent=false, d={}){
       <input type="text" data-col="0" value="${d.name||''}" readonly placeholder="" enterkeyhint="next" oninput="autoFillWorker(this)" onkeydown="tableNavKey(event,this)">
     </td>
     <td class="editable-cell ${hasWage}" ondblclick="enableEdit(this)">
-      <input type="number" data-col="1" value="${d.wage||''}" placeholder="" min="0" enterkeyhint="next" oninput="rowChange()" onchange="rowChange()" onkeydown="tableNavKey(event,this)">
+      <input type="number" data-col="1" value="${d.wage||''}" placeholder="" min="0" enterkeyhint="next" oninput="(function(inp){var tr=inp.closest('tr');var td=inp.closest('td');if(inp.value.trim()){td.classList.add('has-value');}else{td.classList.remove('has-value');}var ins=tr.querySelectorAll('input:not([type=checkbox])');var workerName=ins[0]?ins[0].value.trim():'';if(workerName&&inp.value.trim()&&ins[2]&&(!ins[2].value||parseFloat(ins[2].value)===0)){ins[2].value='1';}rowChange();})(this);" onchange="rowChange()" onkeydown="tableNavKey(event,this)">
     </td>
     <td><input type="number" data-col="2" value="${d.qty||''}" placeholder="0" step="0.5" min="0" enterkeyhint="next" oninput="rowQtyChange(this)" onchange="rowChange()" onkeydown="tableNavKey(event,this)"></td>
     <td style="position:relative"><input type="text" data-col="3" class="site-inp" value="${d.site||''}" placeholder="" oninput="showSiteBalloon(this)" onblur="hideSiteBalloon(this)" enterkeyhint="next" onkeydown="siteKeyNav(event,this);tableNavKey(event,this)" onchange="rowChange()"></td>
@@ -1857,7 +1990,7 @@ function autoAddRowIfNeeded(){
   const lastTr=tb.rows[tb.rows.length-1];
   const ins=lastTr.querySelectorAll('input');
   // 작업자,인건비,수량,현장명,비고,지출 중 하나라도 있으면 새 행 추가
-  const hasValue=ins[0].value.trim()!=='' || ins[2].value.trim()!=='' || ins[5].value.trim()!=='';
+  const hasValue=ins[0].value.trim()!=='' || ins[3].value.trim()!=='' || ins[4].value.trim()!=='' || ins[5].value.trim()!=='';
   if(hasValue) addRow(true);
 }
 
@@ -1919,10 +2052,10 @@ function saveCurrentRows(){
     const ins=tr.querySelectorAll('input:not([type=checkbox])');
     // ins[0]=작업자 ins[1]=인건비 ins[2]=수량 ins[3]=현장명 ins[4]=비고 ins[5]=지출(원) ins[6]=지출내용
     data.push({
-      name:ins[0].value, wage:ins[1].value,
-      qty:ins[2].value, site:ins[3].value,
-      note:ins[4].value, material:ins[5].value,
-      materialNote:ins[6].value
+      name:ins[0]?ins[0].value:'', wage:ins[1]?ins[1].value:'',
+      qty:ins[2]?ins[2].value:'', site:ins[3]?ins[3].value:'',
+      note:ins[4]?ins[4].value:'', material:ins[5]?ins[5].value:'',
+      materialNote:ins[6]?ins[6].value:''
     });
     // 작업자 이름이 있으면 작업자 목록에 자동 등록 (중복 없이)
     const wName = ins[0].value.trim();
@@ -2154,9 +2287,10 @@ var _menuItems = {
     {t:'그래프',f:function(){openGraphMod();}}
   ],
   ms:[
-    {t:'작업자관리', f:function(){openWorkerMgr();}},
-    {t:'계정 관리',  f:function(){openAccMgmt();}},
-    {t:'초기화',     f:function(){openResetMod();}}
+    {t:'작업자관리',   f:function(){openWorkerMgr();}},
+    {t:'계정 관리',    f:function(){openAccMgmt();}},
+    {t:'GitHub Gist 설정', f:function(){openPathSettings();}},
+    {t:'초기화',       f:function(){openResetMod();}}
   ]
 };
 
@@ -2359,7 +2493,7 @@ function loadDateView(){
 // ============ STATS ============
 function openStats(){
   const now=new Date();
-  document.getElementById('sfrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  document.getElementById('sfrom').value=getDateStr(new Date(now.getFullYear(),now.getMonth(),1));
   document.getElementById('sto').value=today;
   calcStats();
   openMod('statsMod');
@@ -2798,8 +2932,7 @@ function addAcc(){
   if(!id||!pw){ showAlert('입력 오류','아이디와 비밀번호를 모두 입력하세요.','⚠️'); return; }
   if(DB.accounts.find(a=>a.id===id)){ showAlert('중복','이미 존재하는 아이디입니다.','⚠️'); return; }
   DB.accounts.push({id,pw});
-  syncAccounts();  // 계정 파일에 즉시 저장
-  saveDB(true);
+  syncAccounts();  // 계정 파일에 즉시 저장 (내부에서 saveDB 호출됨)
   renderAccList();
   document.getElementById('naid').value=''; document.getElementById('napw').value='';
   toast('✅','계정 추가 완료!');
@@ -2810,8 +2943,7 @@ function delAcc(i){
     return;
   }
   DB.accounts.splice(i,1);
-  syncAccounts();
-  saveDB(true);
+  syncAccounts();  // 내부에서 saveDB 호출됨
   renderAccList();
   toast('🗑️','계정이 삭제되었습니다.');
 }
@@ -2901,74 +3033,39 @@ function closeAndSave(){saveCurrentRows();saveDB(true).finally(function(){_appCl
 function doCloseSave(){closeMod('closeSaveMod');saveCurrentRows();saveDB(true).finally(function(){_appClose();});}
 function _appClose(){
   toast('☁️','저장 완료!');
-  // 저장 후 로그인 화면으로 복귀 (PC·모바일 공통)
-  setTimeout(function(){ logout(); },700);
+  const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if(isMobile){
+    // 모바일: 로그인 화면으로 복귀
+    setTimeout(function(){ logout(); }, 700);
+  } else {
+    // PC: 저장 후 로그인 화면으로 복귀
+    setTimeout(function(){ logout(); }, 700);
+  }
 }
 
-// ============ PATH SETTINGS ============
+// ============ GITHUB GIST SETTINGS ============
 function openPathSettings(){
-  // 기본 경로 표시
-  if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.get_default_save_path().then(function(defPath){
-      const defEl = document.getElementById('defaultPathLabel');
-      if(defEl) defEl.textContent = defPath || '내문서\\BN업무일지';
-    });
-    // 경로2 설정파일에서 불러오기
-    window.pywebview.api.get_save_path2().then(function(p2){
-      document.getElementById('savePathInp2').value = p2 || '';
-    });
-    // 경로3(구글드라이브) 설정파일에서 불러오기
-    if(window.pywebview.api.get_save_path3){
-      window.pywebview.api.get_save_path3().then(function(p3){
-        document.getElementById('savePathInp3').value = p3 || '';
-      });
-    } else {
-      const cur3 = (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
-      document.getElementById('savePathInp3').value = cur3;
-    }
-  } else {
-    const cur2 = (DB.config && DB.config.savePath2) ? DB.config.savePath2 : '';
-    document.getElementById('savePathInp2').value = cur2;
-    const cur3 = (DB.config && DB.config.savePath3) ? DB.config.savePath3 : '';
-    document.getElementById('savePathInp3').value = cur3;
-  }
+  if(!DB.config) DB.config = {};
+  document.getElementById('gistTokenInp').value = DB.config.gistToken || '';
+  document.getElementById('gistIdInp').value = DB.config.gistId || '';
   openMod('pathMod');
 }
 
-function browseFolder(which){
-  if(window.pywebview){
-    window.pywebview.api.select_folder().then(function(p){
-      if(p && which===2){
-        document.getElementById('savePathInp2').value = p;
-      } else if(p && which===3){
-        document.getElementById('savePathInp3').value = p;
-      }
-    });
-  }
-}
-
-function savePathSettings(){
-  let newPath2 = document.getElementById('savePathInp2').value.trim();
-  while(newPath2.includes('\\\\')) newPath2 = newPath2.replaceAll('\\\\','\\');
-  let newPath3 = document.getElementById('savePathInp3').value.trim();
-  while(newPath3.includes('\\\\')) newPath3 = newPath3.replaceAll('\\\\','\\');
+function saveGistSettings(){
+  const token = document.getElementById('gistTokenInp').value.trim();
+  const gistId = document.getElementById('gistIdInp').value.trim();
+  if(!token){ toast('⚠️','GitHub Token을 입력해주세요.'); return; }
   if(!DB.config) DB.config = {};
-  DB.config.savePath2 = newPath2;
-  DB.config.savePath3 = newPath3;
-  // 설정파일에 영구 저장
-  if(window.pywebview && window.pywebview.api){
-    window.pywebview.api.set_save_path2(newPath2);
-    if(window.pywebview.api.set_save_path3){
-      window.pywebview.api.set_save_path3(newPath3);
-    }
-  }
-  saveCurrentRows();
+  DB.config.gistToken = token;
+  DB.config.gistId = gistId;
   saveDB(true);
   closeMod('pathMod');
-  if(newPath2 && newPath3) toast('✅', '저장 경로 2·3 설정 완료');
-  else if(newPath2) toast('✅', '저장 경로2 설정: ' + newPath2);
-  else if(newPath3) toast('✅', '저장 경로3(구글드라이브) 설정: ' + newPath3);
-  else toast('ℹ️', '저장 경로2·3이 비워졌습니다. 기본 경로에만 저장됩니다.');
+  toast('✅','GitHub Gist 설정 저장 — 자동저장 테스트 중...');
+  // 설정 직후 즉시 저장 테스트
+  setTimeout(function(){
+    const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
+    gistSave(db, false);
+  }, 400);
 }
 
 function openResetMod(){
@@ -3165,7 +3262,7 @@ function openGraphMod(){
   }
   // 기본 날짜: 이번 달
   const now = new Date();
-  document.getElementById('graphFrom').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  document.getElementById('graphFrom').value = getDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
   document.getElementById('graphTo').value = today;
   const cards = document.getElementById('graphCards');
   if(cards) cards.innerHTML = '';
@@ -3538,13 +3635,39 @@ function autoFillWorker(input) {
     if (worker) {
         const ins = currentTr.querySelectorAll('input:not([type=checkbox])');
         ins[1].value = worker.wage || '';
-        // 작업자 입력 시에만 일 수 자동 1 (작업자란이 비어있지 않을 때)
+        if(ins[1].value.trim()){
+          const wageTd = ins[1].closest('td');
+          if(wageTd) wageTd.classList.add('has-value');
+        }
+        // 작업자 입력 시 일 수 자동 1
+        if(ins[2] && (!ins[2].value || parseFloat(ins[2].value)===0)){
+          ins[2].value = '1';
+        }
         updateRowLabor(currentTr);
+        rowChange();
+    } else {
+        // DB에 없는 신규 작업자: 이름만 입력돼도 일 수 자동 1
+        const ins = currentTr.querySelectorAll('input:not([type=checkbox])');
+        if(ins[2] && (!ins[2].value || parseFloat(ins[2].value)===0)){
+          ins[2].value = '1';
+        }
         rowChange();
     }
 }
 
 loadDB();
+
+// 탭바 강제 초기화: CSS 미매칭 대비 DOMContentLoaded 시점에 JS로 강제 실행
+document.addEventListener('DOMContentLoaded', function(){
+  if(window.innerWidth <= 1024){
+    const tabBar = document.getElementById('mobileTabBar');
+    if(tabBar) tabBar.style.display = 'flex';
+    const sumBar = document.getElementById('mobileSumBar');
+    if(sumBar) sumBar.style.display = 'flex';
+    const bottomBar = document.querySelector('.bottom-bar');
+    if(bottomBar) bottomBar.style.flexShrink = '0';
+  }
+});
 
 (function(){try{var p=(window.navigator.standalone===true)||window.matchMedia('(display-mode: standalone)').matches;if(p&&history.length<=1)history.pushState(null,'',location.href);}catch(e){}})();
 
