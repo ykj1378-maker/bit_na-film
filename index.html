@@ -427,16 +427,29 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 /* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
 /* ===== 스마트폰/터치기기 전용 (PC에서 창 크기와 무관하게 적용 안 됨) ===== */
 @media (hover: none) and (pointer: coarse) {
-  /* 전체 높이 고정 */
-  html { height: -webkit-fill-available !important; }
-  body { height: 100dvh !important; height: -webkit-fill-available !important; overflow: hidden !important; }
-  #app { height: 100dvh !important; height: -webkit-fill-available !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+  /* ── 전체 앱 높이 구조 ── */
+  html, body {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    overflow: hidden !important;
+  }
+  #app {
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
 
-  /* 상단 고정 영역 */
-  .title-bar, .menu-bar, .toolbar { flex: 0 0 auto !important; }
+  /* ── 상단 고정 (shrink 금지) ── */
+  .title-bar, .menu-bar, .toolbar, .mobile-tab-bar {
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+  }
   .title-bar .t-name { font-size: 12px !important; }
 
-  /* 툴바 */
+  /* ── 툴바 ── */
   .toolbar { padding: 4px 6px !important; gap: 4px !important; flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
   .toolbar::-webkit-scrollbar { display: none !important; }
   .date-display { padding: 6px 8px !important; font-size: 11px !important; white-space: nowrap !important; }
@@ -445,7 +458,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .search-wrap input { font-size: 11px !important; padding: 5px 8px 5px 26px !important; }
   .toolbar > div:first-child { min-width: 0 !important; }
 
-  /* 메뉴바 */
+  /* ── 메뉴바 ── */
   .menu-bar { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; white-space: nowrap !important; }
   .menu-bar::-webkit-scrollbar { display: none !important; }
   .menu-btn { padding: 5px 8px !important; font-size: 11px !important; }
@@ -454,6 +467,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .mobile-tab-bar {
     display: flex !important;
     flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
     background: var(--bg) !important;
     border-bottom: 2px solid var(--border) !important;
     padding: 5px 8px !important;
@@ -486,27 +500,20 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .mobile-tab-bar button .mtab-label { font-size: 10px !important; opacity: .85; }
   .mobile-tab-bar button.active .mtab-label { color: rgba(255,255,255,.9) !important; }
 
-  /* ── 하단 고정 영역 ── */
-  .mobile-sum-bar { display: flex !important; flex: 0 0 auto !important; }
-  .msb-label { font-size: 8px !important; }
-  .msb-value { font-size: 11px !important; }
-  .bottom-bar { flex: 0 0 auto !important; padding: 5px 8px !important; padding-bottom: calc(5px + var(--safe-bot)) !important; }
-  .bottom-btn { padding: 7px 12px !important; font-size: 11px !important; }
-
-  /* ── 컨텐츠 영역: flex 방식으로 겹침 방지 ── */
+  /* ── 컨텐츠 영역: flex:1로 남은 공간 차지 ── */
   .content-area {
     flex: 1 1 0 !important;
     min-height: 0 !important;
-    position: relative !important;
-    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    overflow: hidden !important;
+    position: static !important;
   }
   .table-wrap {
     flex: 1 1 0 !important;
     min-height: 0 !important;
     width: 100% !important;
-    height: auto !important;
+    height: 100% !important;
     position: static !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
@@ -521,7 +528,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .editable-cell:not(.editing):not(.has-value)::after { content: '' !important; display: none !important; }
   .editable-cell input { pointer-events: all !important; cursor: text !important; }
 
-  /* 요약패널: 기본 숨김, tab-visible 시 flex로 꽉 채움 */
+  /* ── 요약패널 ── */
   .sum-panel { display: none !important; }
   .sum-panel.tab-visible {
     display: flex !important;
@@ -537,14 +544,30 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     background: #fff !important;
   }
 
-  /* 모달 */
+  /* ── 하단 고정 (shrink 금지) ── */
+  .mobile-sum-bar {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+  }
+  .msb-label { font-size: 8px !important; }
+  .msb-value { font-size: 11px !important; }
+  .bottom-bar {
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+    padding: 5px 8px !important;
+    padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .bottom-btn { padding: 7px 12px !important; font-size: 11px !important; }
+
+  /* ── 모달 ── */
   .modal { max-width: 98vw !important; max-height: 90vh !important; }
   .modal-body { padding: 10px 8px !important; }
   .f-row { flex-wrap: wrap !important; }
   .f-row label { min-width: 60px !important; font-size: 11px !important; }
   .f-row input, .f-row select { font-size: 14px !important; padding: 8px 10px !important; }
 
-  /* 행 추가 모달 */
+  /* ── 행 추가 모달 ── */
   #addRowMod .modal { flex-direction: column !important; }
   .ar-left { flex: 1 !important; overflow-y: auto !important; }
   .ar-body { padding: 10px 12px !important; }
