@@ -1797,7 +1797,7 @@ function addRow(silent=false, d={}){
       <input type="text" data-col="0" value="${d.name||''}" readonly placeholder="" enterkeyhint="next" oninput="autoFillWorker(this)" onkeydown="tableNavKey(event,this)">
     </td>
     <td class="editable-cell ${hasWage}" ondblclick="enableEdit(this)">
-      <input type="number" data-col="1" value="${d.wage||''}" placeholder="" min="0" enterkeyhint="next" oninput="rowChange()" onchange="rowChange()" onkeydown="tableNavKey(event,this)">
+      <input type="number" data-col="1" value="${d.wage||''}" placeholder="" min="0" enterkeyhint="next" oninput="var _td=this.closest('td');if(this.value.trim()){_td.classList.add('has-value');}else{_td.classList.remove('has-value');}rowChange();" onchange="rowChange()" onkeydown="tableNavKey(event,this)">
     </td>
     <td><input type="number" data-col="2" value="${d.qty||''}" placeholder="0" step="0.5" min="0" enterkeyhint="next" oninput="rowQtyChange(this)" onchange="rowChange()" onkeydown="tableNavKey(event,this)"></td>
     <td style="position:relative"><input type="text" data-col="3" class="site-inp" value="${d.site||''}" placeholder="" oninput="showSiteBalloon(this)" onblur="hideSiteBalloon(this)" enterkeyhint="next" onkeydown="siteKeyNav(event,this);tableNavKey(event,this)" onchange="rowChange()"></td>
