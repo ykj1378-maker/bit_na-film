@@ -1817,20 +1817,23 @@ function appInit(){
     }
   }, 30000); // 30초마다 체크
   window.addEventListener('beforeunload',()=>{ saveCurrentRows(); saveDB(false); });
-  // 백그라운드에서 자정 넘긴 후 복귀 시 즉시 날짜 갱신
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState === 'visible'){
-      const newDay = getDateStr(new Date());
-      if(newDay !== today){
-        saveCurrentRows();
-        saveDB(true);
-        today = newDay;
-        updateTodayLabel();
-        loadTodayRows();
-        calcSummary();
+  // 백그라운드에서 자정 넘긴 후 복귀 시 즉시 날짜 갱신 (중복 등록 방지)
+  if(!window._visibilityHandlerAdded){
+    window._visibilityHandlerAdded = true;
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible'){
+        const newDay = getDateStr(new Date());
+        if(newDay !== today){
+          saveCurrentRows();
+          saveDB(true);
+          today = newDay;
+          updateTodayLabel();
+          loadTodayRows();
+          calcSummary();
+        }
       }
-    }
-  });
+    });
+  }
   // 화면 비율 자동 맞춤 (모바일에서는 적용 안 함)
   function autoScale(){
     // 터치 기기(모바일/태블릿)는 스케일 조정 안 함
