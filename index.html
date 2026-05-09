@@ -1610,20 +1610,25 @@ function saveDB(quiet=false){
 // ── GitHub Gist 저장 (PATCH: 기존 Gist 수정 / POST: 새 Gist 생성) ──
 async function gistSave(db, quiet){
   const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
-  if(!token) return; // 설정 안 됐으면 스킵
+  if(!token) return;
   const payload = JSON.stringify(db, null, 2);
   const body = { files:{ 'bn_data.json':{ content: payload } } };
   try{
-    let res, gistId = DB.config.gistId ? DB.config.gistId.trim() : '';
+    let res;
+    const gistId = DB.config.gistId ? DB.config.gistId.trim() : '';
     if(gistId){
-      // 기존 Gist 수정
       res = await fetch('https://api.github.com/gists/'+gistId, {
         method:'PATCH',
         headers:{ 'Authorization':'token '+token, 'Content-Type':'application/json' },
         body: JSON.stringify(body)
       });
+      if(res.ok){
+        if(!quiet) toast('✅','GitHub 자동저장 완료 ✓');
+      } else {
+        const errJson = await res.json().catch(()=>({}));
+        if(!quiet) toast('⚠️','GitHub 저장 실패: '+(errJson.message||res.status));
+      }
     } else {
-      // 새 Gist 생성
       res = await fetch('https://api.github.com/gists', {
         method:'POST',
         headers:{ 'Authorization':'token '+token, 'Content-Type':'application/json' },
@@ -1631,18 +1636,13 @@ async function gistSave(db, quiet){
       });
       if(res.ok){
         const json = await res.json();
-        DB.config.gistId = json.id; // 생성된 Gist ID 자동 저장
-        // localStorage에도 gistId 반영
+        DB.config.gistId = json.id;
         try{ localStorage.setItem('bn_db2', JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
         if(!quiet) toast('✅','GitHub Gist 생성 완료! ID: '+json.id);
-        return;
+      } else {
+        const errJson = await res.json().catch(()=>({}));
+        if(!quiet) toast('⚠️','GitHub 저장 실패: '+(errJson.message||res.status));
       }
-    }
-    if(res && res.ok){
-      if(!quiet) toast('✅','GitHub 자동저장 완료 ✓');
-    } else {
-      const errJson = res ? await res.json().catch(()=>({})) : {};
-      if(!quiet) toast('⚠️','GitHub 저장 실패: '+(errJson.message||res.status));
     }
   }catch(e){
     if(!quiet) toast('⚠️','GitHub 저장 오류: '+e.message);
@@ -1686,17 +1686,23 @@ function showAlert(title, msg, icon='ℹ️'){
 }
 
 // ============ LOGIN ============
-function doLogin(){
+// ── 비밀번호 SHA-256 해시 ──
+async function hashPw(pw){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin(){
   const id  = document.getElementById('lid').value.trim();
   const pw  = document.getElementById('lpw').value.trim();
   const err = document.getElementById('lerr');
   if(!id || !pw){ err.textContent='아이디와 비밀번호를 입력하세요.'; return; }
-  // 기본 계정이 없으면 자동 생성
   if(!DB.accounts || DB.accounts.length === 0){
-    DB.accounts = [{id:'ykj1378', pw:'dbsrudwls0!'}];
+    DB.accounts = [{id:'ykj1378', pw: await hashPw('dbsrudwls0!')}];
     saveDB(true);
   }
-  const match = DB.accounts.find(a => a.id === id && a.pw === pw);
+  const hashed = await hashPw(pw);
+  const match = DB.accounts.find(a => a.id === id && a.pw === hashed);
   if(match){
     err.textContent = '';
     const saveChk = document.getElementById('saveIdChk');
@@ -1705,7 +1711,6 @@ function doLogin(){
     } else {
       localStorage.removeItem('bn_saved_id');
     }
-    // 비밀번호 저장 처리
     const savePwChk = document.getElementById('savePwChk');
     if(savePwChk && savePwChk.checked){
       localStorage.setItem('bn_saved_pw', id + '|' + pw);
@@ -1719,10 +1724,27 @@ function doLogin(){
 }
 
 function checkLogin(){
-  // 기본 계정이 없으면 자동 생성
+  // 기존 평문 비밀번호 → 해시 자동 마이그레이션
+  if(DB.accounts && DB.accounts.length > 0){
+    const needsMigration = DB.accounts.some(a => a.pw && a.pw.length < 64);
+    if(needsMigration){
+      Promise.all(DB.accounts.map(async function(a){
+        if(a.pw && a.pw.length < 64){
+          return { id: a.id, pw: await hashPw(a.pw) };
+        }
+        return a;
+      })).then(function(migrated){
+        DB.accounts = migrated;
+        saveDB(true);
+      });
+    }
+  }
+  // 기본 계정이 없으면 자동 생성 (비밀번호 해시화)
   if(!DB.accounts || DB.accounts.length === 0){
-    DB.accounts = [{id:'ykj1378', pw:'dbsrudwls0!'}];
-    saveDB(true);
+    hashPw('dbsrudwls0!').then(function(h){
+      DB.accounts = [{id:'ykj1378', pw: h}];
+      saveDB(true);
+    });
   }
   // 비밀번호 저장 확인 (저장된 경우 입력 필드에 자동 입력)
   const savedPw = localStorage.getItem('bn_saved_pw');
@@ -2934,11 +2956,13 @@ function addAcc(){
   const id=document.getElementById('naid').value.trim(), pw=document.getElementById('napw').value.trim();
   if(!id||!pw){ showAlert('입력 오류','아이디와 비밀번호를 모두 입력하세요.','⚠️'); return; }
   if(DB.accounts.find(a=>a.id===id)){ showAlert('중복','이미 존재하는 아이디입니다.','⚠️'); return; }
-  DB.accounts.push({id,pw});
-  syncAccounts();  // 계정 파일에 즉시 저장 (내부에서 saveDB 호출됨)
-  renderAccList();
-  document.getElementById('naid').value=''; document.getElementById('napw').value='';
-  toast('✅','계정 추가 완료!');
+  hashPw(pw).then(function(h){
+    DB.accounts.push({id, pw: h});
+    syncAccounts();
+    renderAccList();
+    document.getElementById('naid').value=''; document.getElementById('napw').value='';
+    toast('✅','계정 추가 완료!');
+  });
 }
 function delAcc(i){
   if(DB.accounts.length<=1){
@@ -3083,8 +3107,9 @@ function doReset(){
   const pw = document.getElementById('resetPw').value.trim();
   const errEl = document.getElementById('resetErr');
   if(!id || !pw){ errEl.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
-  const match = DB.accounts && DB.accounts.find(a => a.id === id && a.pw === pw);
-  if(!match){ errEl.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.'; return; }
+  hashPw(pw).then(function(h){
+    const match = DB.accounts && DB.accounts.find(a => a.id === id && a.pw === h);
+    if(!match){ errEl.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.'; return; }
   // 백업 저장 후 초기화
   saveCurrentRows();
   const backupName = 'BN업무일지_초기화백업_' + getDateStr(new Date()) + '_' + Date.now() + '.json';
@@ -3118,6 +3143,7 @@ function doReset(){
     a.click();
     performReset();
   }
+  }); // hashPw then 닫기
 }
 
 function openSavedFolder(){
