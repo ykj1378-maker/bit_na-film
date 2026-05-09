@@ -1322,7 +1322,8 @@ let _mfsTapTimer = {table:null, summary:null};
 let _mfsActive = null;
 
 function isMobileDevice(){
-  return window.innerWidth <= 1024;
+  // 터치 기기(스마트폰/태블릿)인지 판별 — 창 너비만으로는 PC 소창과 구별 불가
+  return ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024;
 }
 
 function initMobileFullscreen(){
@@ -1797,8 +1798,8 @@ function appInit(){
   loadMemo();
   initMobileFullscreen();
   initMiniTabTouch();
-  // 모바일 탭 강제 초기화 (미디어쿼리 미매칭 대비)
-  if(window.innerWidth <= 1024){
+  // 모바일 탭 강제 초기화 (미디어쿼리 미매칭 대비, 터치 기기만)
+  if(isMobileDevice()){
     const tabBar = document.getElementById('mobileTabBar');
     if(tabBar) tabBar.style.display = 'flex';
     switchMobileTab('table');
@@ -1989,8 +1990,8 @@ function autoAddRowIfNeeded(){
   if(tb.rows.length===0){ addRow(true); return; }
   const lastTr=tb.rows[tb.rows.length-1];
   const ins=lastTr.querySelectorAll('input');
-  // 작업자,인건비,수량,현장명,비고,지출 중 하나라도 있으면 새 행 추가
-  const hasValue=ins[0].value.trim()!=='' || ins[2].value.trim()!=='' || ins[5].value.trim()!=='';
+  // 작업자,현장명,비고,지출 중 하나라도 있으면 새 행 추가 (일수 단독으로는 추가 안 함)
+  const hasValue=ins[0].value.trim()!=='' || ins[3].value.trim()!=='' || ins[4].value.trim()!=='' || ins[5].value.trim()!=='';
   if(hasValue) addRow(true);
 }
 
@@ -3659,7 +3660,7 @@ loadDB();
 
 // 탭바 강제 초기화: CSS 미매칭 대비 DOMContentLoaded 시점에 JS로 강제 실행
 document.addEventListener('DOMContentLoaded', function(){
-  if(window.innerWidth <= 1024){
+  if(('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024){
     const tabBar = document.getElementById('mobileTabBar');
     if(tabBar) tabBar.style.display = 'flex';
     const sumBar = document.getElementById('mobileSumBar');
