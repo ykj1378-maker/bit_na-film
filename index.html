@@ -493,17 +493,21 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .bottom-bar { flex: 0 0 auto !important; padding: 5px 8px !important; padding-bottom: calc(5px + var(--safe-bot)) !important; }
   .bottom-btn { padding: 7px 12px !important; font-size: 11px !important; }
 
-  /* ── 컨텐츠 영역: 탭·패널 절대위치로 겹침 완전 방지 ── */
+  /* ── 컨텐츠 영역: flex 방식으로 겹침 방지 ── */
   .content-area {
     flex: 1 1 0 !important;
     min-height: 0 !important;
     position: relative !important;
     overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
   .table-wrap {
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    position: static !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
     border-left: none !important;
@@ -517,14 +521,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .editable-cell:not(.editing):not(.has-value)::after { content: '' !important; display: none !important; }
   .editable-cell input { pointer-events: all !important; cursor: text !important; }
 
-  /* 요약패널: 기본 숨김, tab-visible 시 절대위치로 꽉 채움 */
+  /* 요약패널: 기본 숨김, tab-visible 시 flex로 꽉 채움 */
   .sum-panel { display: none !important; }
   .sum-panel.tab-visible {
     display: flex !important;
     flex-direction: column !important;
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    position: static !important;
     min-width: 0 !important;
     border: none !important;
     overflow-y: auto !important;
