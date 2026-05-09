@@ -391,7 +391,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* ===== 모바일 로그인 최적화 ===== */
 /* 모바일(터치기기)에서만 로그인 박스 최적화 — PC 창 축소 시 적용 안 됨 */
-@media (hover: none) and (pointer: coarse) and (max-width: 480px) {
+@media screen and (max-width: 480px) {
   .login-box {
     width: 92vw !important;
     max-width: 380px !important;
@@ -425,8 +425,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .win-btn { display: none !important; }
 
 /* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
-/* ===== 스마트폰/터치기기 전용 (PC에서 창 크기와 무관하게 적용 안 됨) ===== */
-@media (hover: none) and (pointer: coarse) {
+/* ===== 모바일 전용 (max-width: 1024px) ===== */
+@media screen and (max-width: 1024px) {
   /* ── html: iOS/Android Safari 호환 ── */
   html {
     height: -webkit-fill-available !important;
@@ -575,7 +575,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 
 /* 소형 스마트폰 추가 최적화 */
-@media (hover: none) and (pointer: coarse) and (max-width: 400px) {
+@media screen and (max-width: 400px) {
   .work-table { min-width: 420px; }
   .work-table th { font-size: 9px !important; padding: 6px 2px !important; }
   .work-table td { font-size: 10px !important; padding: 4px 1px !important; }
@@ -1322,8 +1322,7 @@ let _mfsTapTimer = {table:null, summary:null};
 let _mfsActive = null;
 
 function isMobileDevice(){
-  // 화면 너비가 아닌 터치 기기 여부로 판단 → PC에서 창을 줄여도 모바일 전환 없음
-  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  return window.innerWidth <= 1024;
 }
 
 function initMobileFullscreen(){
@@ -3545,6 +3544,18 @@ function autoFillWorker(input) {
 }
 
 loadDB();
+
+// 탭바 강제 초기화: CSS 미매칭 대비 DOMContentLoaded 시점에 JS로 강제 실행
+document.addEventListener('DOMContentLoaded', function(){
+  if(window.innerWidth <= 1024){
+    const tabBar = document.getElementById('mobileTabBar');
+    if(tabBar) tabBar.style.display = 'flex';
+    const sumBar = document.getElementById('mobileSumBar');
+    if(sumBar) sumBar.style.display = 'flex';
+    const bottomBar = document.querySelector('.bottom-bar');
+    if(bottomBar) bottomBar.style.flexShrink = '0';
+  }
+});
 
 (function(){try{var p=(window.navigator.standalone===true)||window.matchMedia('(display-mode: standalone)').matches;if(p&&history.length<=1)history.pushState(null,'',location.href);}catch(e){}})();
 
