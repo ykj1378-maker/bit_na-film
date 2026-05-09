@@ -426,7 +426,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
 /* ===== 모바일 전용 (max-width: 1024px) ===== */
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 1024px) and (pointer: coarse) {
   /* ── html: iOS/Android Safari 호환 ── */
   html {
     height: -webkit-fill-available !important;
@@ -1322,7 +1322,7 @@ let _mfsTapTimer = {table:null, summary:null};
 let _mfsActive = null;
 
 function isMobileDevice(){
-  return window.innerWidth <= 1024;
+  return ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024;
 }
 
 function initMobileFullscreen(){
@@ -1819,8 +1819,8 @@ function appInit(){
   loadMemo();
   initMobileFullscreen();
   initMiniTabTouch();
-  // 모바일 탭 강제 초기화 (미디어쿼리 미매칭 대비)
-  if(window.innerWidth <= 1024){
+  // 모바일 탭 강제 초기화 (미디어쿼리 미매칭 대비, 터치 기기만)
+  if(('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024){
     const tabBar = document.getElementById('mobileTabBar');
     if(tabBar) tabBar.style.display = 'flex';
     switchMobileTab('table');
@@ -3688,7 +3688,7 @@ loadDB();
 
 // 탭바 강제 초기화: CSS 미매칭 대비 DOMContentLoaded 시점에 JS로 강제 실행
 document.addEventListener('DOMContentLoaded', function(){
-  if(window.innerWidth <= 1024){
+  if(('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024){
     const tabBar = document.getElementById('mobileTabBar');
     if(tabBar) tabBar.style.display = 'flex';
     const sumBar = document.getElementById('mobileSumBar');
