@@ -427,32 +427,29 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 /* ===== 스마트폰 감지: 터치기기 + 1024px 이하 ===== */
 /* ===== 스마트폰/터치기기 전용 (PC에서 창 크기와 무관하게 적용 안 됨) ===== */
 @media (hover: none) and (pointer: coarse) {
-  /* ── 전체 앱 높이 구조 ── */
+  /* ── html: iOS/Android Safari 호환 ── */
   html {
-    height: 100dvh !important;
     height: -webkit-fill-available !important;
-    overflow: hidden !important;
   }
+  /* ── body/#app: 100dvh(주소창 제외) + -webkit-fill-available 폴백 ── */
   body {
     height: 100dvh !important;
     height: -webkit-fill-available !important;
     overflow: hidden !important;
-    max-height: 100dvh !important;
   }
   #app {
     height: 100dvh !important;
     height: -webkit-fill-available !important;
-    max-height: 100dvh !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
   }
 
-  /* ── 상단 고정 (shrink 금지) ── */
-  .title-bar, .menu-bar, .toolbar, .mobile-tab-bar {
-    flex: 0 0 auto !important;
+  /* ── 고정 영역: flex-shrink:0 으로 줄어들지 않게 ── */
+  .title-bar, .menu-bar, .toolbar, .mobile-tab-bar, .mobile-sum-bar, .bottom-bar {
     flex-shrink: 0 !important;
+    flex: 0 0 auto !important;
   }
   .title-bar .t-name { font-size: 12px !important; }
 
@@ -473,8 +470,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   /* ── 미니탭바 ── */
   .mobile-tab-bar {
     display: flex !important;
-    flex: 0 0 auto !important;
-    flex-shrink: 0 !important;
     background: var(--bg) !important;
     border-bottom: 2px solid var(--border) !important;
     padding: 5px 8px !important;
@@ -507,20 +502,19 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   .mobile-tab-bar button .mtab-label { font-size: 10px !important; opacity: .85; }
   .mobile-tab-bar button.active .mtab-label { color: rgba(255,255,255,.9) !important; }
 
-  /* ── 컨텐츠 영역: flex:1로 남은 공간 차지 ── */
+  /* ── 컨텐츠 영역: 남은 공간 정확히 채움 ── */
   .content-area {
     flex: 1 1 0 !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
-    position: static !important;
   }
+  /* ── 테이블 래퍼: flex 컨테이너 안에서 스크롤 올바르게 ── */
   .table-wrap {
     flex: 1 1 0 !important;
     min-height: 0 !important;
     width: 100% !important;
-    position: static !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
     border-left: none !important;
@@ -542,7 +536,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     flex: 1 1 0 !important;
     min-height: 0 !important;
     width: 100% !important;
-    position: static !important;
     min-width: 0 !important;
     border: none !important;
     overflow-y: auto !important;
@@ -550,17 +543,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     background: #fff !important;
   }
 
-  /* ── 하단 고정 (shrink 금지) ── */
-  .mobile-sum-bar {
-    display: flex !important;
-    flex: 0 0 auto !important;
-    flex-shrink: 0 !important;
-  }
+  /* ── 하단 고정 ── */
+  .mobile-sum-bar { display: flex !important; }
   .msb-label { font-size: 8px !important; }
   .msb-value { font-size: 11px !important; }
   .bottom-bar {
-    flex: 0 0 auto !important;
-    flex-shrink: 0 !important;
     padding: 5px 8px !important;
     padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px)) !important;
   }
