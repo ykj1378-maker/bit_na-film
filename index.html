@@ -1827,17 +1827,26 @@ function appInit(){
   }
   // 날짜 변경 감지: 자정이 지나면 새 날짜로 초기화 (재호출 시 중복 방지)
   if(window._dateCheckInterval) clearInterval(window._dateCheckInterval);
+  let _lastRealToday = getDateStr(new Date()); // 실제 오늘 추적용
   window._dateCheckInterval = setInterval(()=>{
     const newDay = getDateStr(new Date());
-    if(newDay !== today){
-      saveCurrentRows(); // 기존 날짜 데이터 먼저 저장
-      saveDB(true);      // Firebase·로컬에 즉시 반영
-      today = newDay;
-      updateTodayLabel();
-      loadTodayRows();   // 새 날짜는 빈 행으로 시작
-      calcSummary();
+    if(newDay !== _lastRealToday){
+      // 자정이 지나 실제 날짜가 바뀜
+      // 사용자가 오늘(전날)을 보고 있을 때만 자동으로 새 날짜로 이동
+      if(today === _lastRealToday){
+        saveCurrentRows();
+        saveDB(true);
+        today = newDay;
+        updateTodayLabel();
+        loadTodayRows();
+        calcSummary();
+        // 닫기 버튼 숨김 (오늘 날짜로 정착)
+        const btn = document.getElementById('btnDateClose');
+        if(btn) btn.style.display = 'none';
+      }
+      _lastRealToday = newDay;
     }
-  }, 30000); // 30초마다 체크
+  }, 30000);
   window.addEventListener('beforeunload',()=>{ saveCurrentRows(); saveDB(false); });
   // 백그라운드에서 자정 넘긴 후 복귀 시 즉시 날짜 갱신 (중복 등록 방지)
   if(!window._visibilityHandlerAdded){
@@ -1845,13 +1854,19 @@ function appInit(){
     document.addEventListener('visibilitychange', ()=>{
       if(document.visibilityState === 'visible'){
         const newDay = getDateStr(new Date());
-        if(newDay !== today){
-          saveCurrentRows();
-          saveDB(true);
-          today = newDay;
-          updateTodayLabel();
-          loadTodayRows();
-          calcSummary();
+        if(newDay !== _lastRealToday){
+          // 사용자가 오늘(전날)을 보고 있을 때만 자동 이동
+          if(today === _lastRealToday){
+            saveCurrentRows();
+            saveDB(true);
+            today = newDay;
+            updateTodayLabel();
+            loadTodayRows();
+            calcSummary();
+            const btn = document.getElementById('btnDateClose');
+            if(btn) btn.style.display = 'none';
+          }
+          _lastRealToday = newDay;
         }
       }
     });
