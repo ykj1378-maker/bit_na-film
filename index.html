@@ -687,18 +687,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .menu-drop-item:hover,.menu-drop-item:active{background:#f4f6fa;color:var(--primary);}
 </style>
 
-<!-- Firebase 준비 Promise — module 로딩 완료를 확실히 대기하기 위해 resolve/reject를 외부에 노출 -->
-<script>
-window._fbReadyPromise = new Promise(function(resolve, reject){
-  window._fbResolve = resolve;
-  window._fbReject  = reject;
-});
-window._fbReady = false;
-</script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import{getFirestore,doc,setDoc,getDoc,collection,getDocs,orderBy,query,limit}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
-try{
 const _a=initializeApp({apiKey:"AIzaSyARK0Ku1EZDgzPV1F0JZKWmQ0jMDfBysqM",authDomain:"bitna-17ed3.firebaseapp.com",projectId:"bitna-17ed3",storageBucket:"bitna-17ed3.firebasestorage.app",messagingSenderId:"798709646035",appId:"1:798709646035:web:dd06dd5b66a339cd894a26"});
 const _db=getFirestore(_a),_D="bn_worklog_main",_COL="bn_data";
 window._fbSave=async function(o){
@@ -714,10 +705,6 @@ window._fbLoad=async function(){try{const s=await getDoc(doc(_db,_COL,_D));if(s.
 window._fbListBackups=async function(){try{const q=query(collection(_db,_COL),orderBy("savedAt","desc"),limit(10));const s=await getDocs(q);return s.docs.filter(d=>d.id!==_D).map(d=>({id:d.id,savedAt:d.data().savedAt||d.data().updatedAt||""}));}catch(e){return[];}};
 window._fbLoadBackup=async function(id){try{const s=await getDoc(doc(_db,_COL,id));if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}return null;}catch(e){return null;}};
 window._fbReady=true;
-window._fbResolve(true); // module 로딩 + Firebase 초기화 완전히 완료됨을 알림
-}catch(e){
-  window._fbReject(e);   // 초기화 실패 시 reject
-}
 </script>
 </head>
 <body>
@@ -1533,7 +1520,6 @@ function loadDB(){
     if(r){const p=JSON.parse(r);if(p&&p.config)p.config.savePath='';Object.assign(DB,p);}
   }catch(e){}
   function _sync(){
-    if(!window._fbReady||!window._fbLoad)return;
     window._fbLoad().then(function(c){
       if(!c)return;
       const lt=DB.config&&DB.config._savedAt?new Date(DB.config._savedAt):new Date(0);
@@ -1565,13 +1551,14 @@ function loadDB(){
       }
     }).catch(function(){});
   }
-  // Firebase 완전 준비 후 _sync 실행 — Promise로 타이밍 보장
-  window._fbReadyPromise.then(function(){
+  // Firebase 준비 대기 후 _sync 실행 — 커팅.html autoLoad 방식과 동일 (최대 10초 폴링)
+  (async function(){
+    let fw=0;
+    while(!window._fbReady && fw<100){ await new Promise(function(r){setTimeout(r,100);}); fw++; }
+    if(!window._fbReady){ toast('⚠️','저장소 연결 실패. 새로고침 하세요.'); return; }
     _sync();
-  }).catch(function(){
-    toast('⚠️','Firebase 초기화 실패. 새로고침 하세요.');
-  });
-  // ── GitHub Gist 동기화 — Firebase 완료 후 3초 여유를 두고 실행 ──
+  })();
+  // ── GitHub Gist 동기화 — Firebase 완료 확인 후 3초 여유를 두고 실행 ──
   function _gistSync(){
     const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
     const gistId = DB.config && DB.config.gistId ? DB.config.gistId.trim() : '';
@@ -1599,9 +1586,12 @@ function loadDB(){
       }
     }).catch(function(){});
   }
-  window._fbReadyPromise.then(function(){
+  (async function(){
+    let fw=0;
+    while(!window._fbReady && fw<100){ await new Promise(function(r){setTimeout(r,100);}); fw++; }
+    if(!window._fbReady) return;
     setTimeout(_gistSync, 3000); // Firebase 완료 후 3초 여유 (Gist API가 더 느림)
-  }).catch(function(){});
+  })();
   // 2) pywebview: 계정 먼저 로드 완료 후 업무 데이터 로드 (순서 보장)
   if(window.pywebview && window.pywebview.api){
     // ① 계정 파일 로드 완료 후 ② 업무 데이터 로드 (then 체인으로 순서 보장)
