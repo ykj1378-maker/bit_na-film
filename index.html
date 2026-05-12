@@ -689,11 +689,21 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-import{getFirestore,doc,setDoc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+import{getFirestore,doc,setDoc,getDoc,collection,getDocs,orderBy,query,limit}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 const _a=initializeApp({apiKey:"AIzaSyARK0Ku1EZDgzPV1F0JZKWmQ0jMDfBysqM",authDomain:"bitna-17ed3.firebaseapp.com",projectId:"bitna-17ed3",storageBucket:"bitna-17ed3.firebasestorage.app",messagingSenderId:"798709646035",appId:"1:798709646035:web:dd06dd5b66a339cd894a26"});
-const _db=getFirestore(_a),_D="bn_worklog_main";
-window._fbSave=async function(o){try{await setDoc(doc(_db,"bn_data",_D),{payload:JSON.stringify(o),updatedAt:new Date().toISOString()});return true;}catch(e){return false;}};
-window._fbLoad=async function(){try{const s=await getDoc(doc(_db,"bn_data",_D));if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}return null;}catch(e){return null;}};
+const _db=getFirestore(_a),_D="bn_worklog_main",_COL="bn_data";
+window._fbSave=async function(o){
+  try{
+    const t=new Date().toISOString();
+    const p=JSON.stringify(o);
+    await setDoc(doc(_db,_COL,_D),{payload:p,updatedAt:t});
+    await setDoc(doc(_db,_COL,"bk_"+t.replace(/[:.]/g,"-")),{payload:p,savedAt:t});
+    return true;
+  }catch(e){return false;}
+};
+window._fbLoad=async function(){try{const s=await getDoc(doc(_db,_COL,_D));if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}return null;}catch(e){return null;}};
+window._fbListBackups=async function(){try{const q=query(collection(_db,_COL),orderBy("savedAt","desc"),limit(10));const s=await getDocs(q);return s.docs.filter(d=>d.id!==_D).map(d=>({id:d.id,savedAt:d.data().savedAt||d.data().updatedAt||""}));}catch(e){return[];}};
+window._fbLoadBackup=async function(id){try{const s=await getDoc(doc(_db,_COL,id));if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}return null;}catch(e){return null;}};
 window._fbReady=true;
 </script>
 </head>
@@ -1187,6 +1197,18 @@ window._fbReady=true;
   </div>
 </div>
 
+<!-- 백업 목록 -->
+<div class="modal-overlay" id="backupMod">
+  <div class="modal" style="--mw:420px">
+    <div class="modal-head"><h3>🕓 백업 목록</h3><div class="modal-head-btns"><button class="mh-btn mx" onclick="closeMod('backupMod')">✕</button></div></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:#868E96;margin-bottom:12px">클릭하면 해당 시점으로 복원됩니다.</p>
+      <div id="bkList2"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-s" onclick="closeMod('backupMod')">닫기</button></div>
+  </div>
+</div>
+
 <!-- ADD ROW - 단독 전체창 -->
 <div id="addRowMod">
   <div class="modal">
@@ -1504,14 +1526,21 @@ function loadDB(){
       const lt=DB.config&&DB.config._savedAt?new Date(DB.config._savedAt):new Date(0);
       const ct=c.config&&c.config._savedAt?new Date(c.config._savedAt):new Date(0);
       if(ct>=lt){
+        // gistToken/gistId는 로컬 기기 전용 — Firebase 값으로 덮어쓰지 않음
+        const localToken=DB.config&&DB.config.gistToken||'';
+        const localGistId=DB.config&&DB.config.gistId||'';
         const localAccs=DB.accounts&&DB.accounts.length>0?DB.accounts.slice():[];
         const fbAccs=c.accounts&&c.accounts.length>0?c.accounts:[];
         if(c.config)c.config.savePath='';
         Object.assign(DB,c);
+        if(localToken){DB.config.gistToken=localToken;}
+        if(localGistId){DB.config.gistId=localGistId;}
         const merged=[...fbAccs];
         localAccs.forEach(function(la){if(!merged.find(function(fa){return fa.id===la.id;}))merged.push(la);});
         DB.accounts=merged.length>0?merged:localAccs;
         localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();
+        const savedAt=c.config&&c.config._savedAt?new Date(c.config._savedAt).toLocaleString('ko-KR'):'';
+        toast('☁️','복원 완료'+(savedAt?' ('+savedAt+')':''));
       }
     }).catch(function(){});
   }
@@ -1526,15 +1555,19 @@ function loadDB(){
       const lt = DB.config&&DB.config._savedAt ? new Date(DB.config._savedAt) : new Date(0);
       const ct = c.config&&c.config._savedAt   ? new Date(c.config._savedAt)  : new Date(0);
       if(ct > lt){
+        const localToken  = DB.config&&DB.config.gistToken||'';
+        const localGistId = DB.config&&DB.config.gistId||'';
         const localAccs = DB.accounts&&DB.accounts.length>0 ? DB.accounts.slice() : [];
         const gistAccs  = c.accounts&&c.accounts.length>0   ? c.accounts : [];
         if(c.config) c.config.savePath='';
         Object.assign(DB, c);
-        // 계정 병합 (로컬 우선)
+        // gistToken/gistId는 이 기기 전용 — Gist 데이터 값으로 절대 덮어쓰지 않음
+        if(localToken)  DB.config.gistToken = localToken;
+        if(localGistId) DB.config.gistId    = localGistId;
         const merged=[...gistAccs];
         localAccs.forEach(function(la){ if(!merged.find(function(ga){ return ga.id===la.id; })) merged.push(la); });
         DB.accounts = merged.length>0 ? merged : localAccs;
-        try{ localStorage.setItem('bn_db2',JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
+        try{ localStorage.setItem('bn_db2',JSON.stringify(DB)); }catch(e){}
         loadTodayRows(); calcSummary();
         toast('✅','GitHub에서 최신 데이터 불러옴');
       }
@@ -1567,7 +1600,7 @@ function loadDB(){
           DB.accounts = savedAccounts.length > 0 ? savedAccounts : (DB.accounts && DB.accounts.length > 0 ? DB.accounts : []);
           if(!DB.config) DB.config = {};
           DB.config.savePath = safePath;
-          localStorage.setItem('bn_db2', JSON.stringify(Object.assign({}, DB, {config: Object.assign({}, DB.config, {savePath:'', savePath2:'', savePath3:''})})));
+          localStorage.setItem('bn_db2', JSON.stringify(DB));
         }catch(e){}
         // 설정파일에서 savePath2, savePath3 복원
         window.pywebview.api.get_save_path2().then(function(p2){
@@ -1603,12 +1636,14 @@ function _setGistStatus3(state,time){
 function saveDB(quiet=false){
   if(!DB.config)DB.config={};
   DB.config._savedAt=new Date().toISOString();
-  const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
+  // localStorage: gistToken/gistId 포함 저장 (로컬 기기 전용)
   try{
-    localStorage.setItem('bn_db2',JSON.stringify(db));
+    localStorage.setItem('bn_db2',JSON.stringify(DB));
   }catch(e){
     if(!quiet) toast('⚠️','저장공간 초과 — 로컬 저장 실패');
   }
+  // Firebase/외부 전송용: 보안 민감 정보 및 경로 제거
+  const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:'',gistToken:'',gistId:''})});
   if(window._fbReady&&window._fbSave){
     _setFbStatus2('saving');
     window._fbSave(db).then(function(ok){
@@ -1626,12 +1661,49 @@ function saveDB(quiet=false){
   return Promise.resolve(true);
 }
 
+// ── 백업 목록 열기 / 복원 ──
+async function openBackupList(){
+  if(!window._fbReady||!window._fbListBackups){toast('⚠️','Firebase 연결 중...');return;}
+  const list=await window._fbListBackups();
+  const el=document.getElementById('bkList2');
+  if(!list||!list.length){
+    el.innerHTML='<p style="font-size:12px;color:#868E96;text-align:center;padding:20px 0">저장된 백업이 없습니다.</p>';
+    openMod('backupMod');return;
+  }
+  el.innerHTML=list.map(function(b){
+    const w=b.savedAt?new Date(b.savedAt).toLocaleString('ko-KR'):b.id;
+    return'<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;" onclick="restoreBackup(\''+b.id+'\')">'
+      +'<span style="flex:1;font-size:13px;color:var(--text)">'+w+'</span>'
+      +'<span style="font-size:12px;color:var(--primary);font-weight:600">복원 ▶</span>'
+      +'</div>';
+  }).join('');
+  openMod('backupMod');
+}
+async function restoreBackup(id){
+  if(!confirm('이 백업으로 복원할까요? 현재 내용이 교체됩니다.'))return;
+  const data=await window._fbLoadBackup(id);
+  if(!data){toast('❌','복원 실패');return;}
+  try{
+    const localToken=DB.config&&DB.config.gistToken||'';
+    const localGistId=DB.config&&DB.config.gistId||'';
+    Object.assign(DB,data);
+    if(localToken){if(!DB.config)DB.config={};DB.config.gistToken=localToken;}
+    if(localGistId){if(!DB.config)DB.config={};DB.config.gistId=localGistId;}
+    try{localStorage.setItem('bn_db2',JSON.stringify(DB));}catch(e){}
+    loadTodayRows();calcSummary();
+    closeMod('backupMod');
+    toast('☁️','복원 완료');
+  }catch(e){toast('❌','복원 중 오류: '+e.message);}
+}
+
 // ── GitHub Gist 저장 (PATCH: 기존 Gist 수정 / POST: 새 Gist 생성) ──
 async function gistSave(db, quiet){
   const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
   if(!token) return;
+  // Gist 업로드 payload: gistToken/gistId 제외 (보안 + 순환 덮어쓰기 방지)
+  const safeDb = Object.assign({}, db, {config: Object.assign({}, db.config||{}, {gistToken:'', gistId:''})});
   _setGistStatus3('saving');
-  const payload = JSON.stringify(db, null, 2);
+  const payload = JSON.stringify(safeDb, null, 2);
   const body = { files:{ 'bn_data.json':{ content: payload } } };
   try{
     let res;
@@ -1660,7 +1732,7 @@ async function gistSave(db, quiet){
         const json = await res.json();
         DB.config.gistId = json.id;
         const now=new Date();_setGistStatus3('ok',now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'));
-        try{ localStorage.setItem('bn_db2', JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
+        try{ localStorage.setItem('bn_db2', JSON.stringify(DB)); }catch(e){}
         if(!quiet) toast('✅','GitHub Gist 생성 완료! ID: '+json.id);
       } else {
         _setGistStatus3('err');
@@ -2350,7 +2422,8 @@ var _menuItems = {
   mf:[
     {t:'저장',         f:function(){saveCurrentRows();saveDB(false);}},
     {t:'파일 다운로드', f:function(){_dlCurrentData();}},
-    {t:'열기',         f:function(){doOpen();}}
+    {t:'열기',         f:function(){doOpen();}},
+    {t:'🕓 백업 목록',  f:function(){openBackupList();}}
   ],
   mv:[
     {t:'날짜',  f:function(){openDateView();}},
