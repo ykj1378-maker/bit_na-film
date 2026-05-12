@@ -1541,6 +1541,14 @@ function loadDB(){
         localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();
         const savedAt=c.config&&c.config._savedAt?new Date(c.config._savedAt).toLocaleString('ko-KR'):'';
         toast('☁️','복원 완료'+(savedAt?' ('+savedAt+')':''));
+        // 복원 후 토큰이 있으면 Gist에 즉시 1회 저장 — 재실행 후 🐙 상태 동기화
+        const _tok=DB.config&&DB.config.gistToken?DB.config.gistToken.trim():'';
+        if(_tok){
+          setTimeout(function(){
+            const db=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
+            gistSave(db,true);
+          },1500);
+        }
       }
     }).catch(function(){});
   }
