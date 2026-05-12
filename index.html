@@ -743,6 +743,10 @@ window._fbReady=true;
     <button class="menu-btn" id="mb-mf" onclick="toggleMenu('mf',this)">파일</button>
     <button class="menu-btn" id="mb-mv" onclick="toggleMenu('mv',this)">보기</button>
     <button class="menu-btn" id="mb-ms" onclick="toggleMenu('ms',this)">설정</button>
+    <span id="saveStatusBar" style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:#7A8AA0;padding-right:8px;">
+      <span id="fbStatus2" title="Firebase">☁️ —</span>
+      <span id="gistStatus3" title="GitHub Gist">🐙 —</span>
+    </span>
   </div>
   <!-- floating dropdown: body 최상위 레이어 -->
   <div id="menuDropdown" onclick="event.stopPropagation()" style="display:none;position:fixed;z-index:2147483647;background:#fff;border:1px solid #dde3ee;border-radius:10px;min-width:190px;box-shadow:0 8px 28px rgba(0,0,0,.22);padding:6px 0;"></div>
@@ -1584,6 +1588,18 @@ function loadDB(){
   }
   appInit();
 }
+function _setFbStatus2(state,time){
+  const el=document.getElementById('fbStatus2');if(!el)return;
+  if(state==='saving')el.textContent='☁️ 저장 중...';
+  else if(state==='ok')el.textContent='☁️ '+time;
+  else if(state==='err')el.textContent='☁️ ❌';
+}
+function _setGistStatus3(state,time){
+  const el=document.getElementById('gistStatus3');if(!el)return;
+  if(state==='saving')el.textContent='🐙 저장 중...';
+  else if(state==='ok')el.textContent='🐙 '+time;
+  else if(state==='err')el.textContent='🐙 ❌';
+}
 function saveDB(quiet=false){
   if(!DB.config)DB.config={};
   DB.config._savedAt=new Date().toISOString();
@@ -1594,7 +1610,10 @@ function saveDB(quiet=false){
     if(!quiet) toast('⚠️','저장공간 초과 — 로컬 저장 실패');
   }
   if(window._fbReady&&window._fbSave){
+    _setFbStatus2('saving');
     window._fbSave(db).then(function(ok){
+      if(ok){const now=new Date();_setFbStatus2('ok',now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'));}
+      else _setFbStatus2('err');
       if(!quiet)toast(ok?'☁️':'⚠️',ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
     });
   }
@@ -1611,6 +1630,7 @@ function saveDB(quiet=false){
 async function gistSave(db, quiet){
   const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
   if(!token) return;
+  _setGistStatus3('saving');
   const payload = JSON.stringify(db, null, 2);
   const body = { files:{ 'bn_data.json':{ content: payload } } };
   try{
@@ -1623,8 +1643,10 @@ async function gistSave(db, quiet){
         body: JSON.stringify(body)
       });
       if(res.ok){
+        const now=new Date();_setGistStatus3('ok',now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'));
         if(!quiet) toast('✅','GitHub 자동저장 완료 ✓');
       } else {
+        _setGistStatus3('err');
         const errJson = await res.json().catch(()=>({}));
         if(!quiet) toast('⚠️','GitHub 저장 실패: '+(errJson.message||res.status));
       }
@@ -1637,14 +1659,17 @@ async function gistSave(db, quiet){
       if(res.ok){
         const json = await res.json();
         DB.config.gistId = json.id;
+        const now=new Date();_setGistStatus3('ok',now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'));
         try{ localStorage.setItem('bn_db2', JSON.stringify(Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})}))); }catch(e){}
         if(!quiet) toast('✅','GitHub Gist 생성 완료! ID: '+json.id);
       } else {
+        _setGistStatus3('err');
         const errJson = await res.json().catch(()=>({}));
         if(!quiet) toast('⚠️','GitHub 저장 실패: '+(errJson.message||res.status));
       }
     }
   }catch(e){
+    _setGistStatus3('err');
     if(!quiet) toast('⚠️','GitHub 저장 오류: '+e.message);
   }
 }
