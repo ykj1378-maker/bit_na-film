@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'bn-diary-v2';
+const CACHE_NAME = 'bn-diary-v3';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -37,6 +37,11 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   // POST 등 비GET 요청은 무시
   if (event.request.method !== 'GET') return;
+
+  // Firebase 요청은 SW 캐시 제외 (항상 네트워크 직접 처리) — 커팅sw.js와 동일
+  if (event.request.url.includes('firebase') || event.request.url.includes('firestore')) {
+    return;
+  }
 
   event.respondWith(
     fetch(event.request).then(function(response) {
