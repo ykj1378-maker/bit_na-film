@@ -697,7 +697,9 @@ window._fbGetUsers=async function(){
   try{
     const s=await getDoc(doc(_db,_UC,"accounts"));
     if(s.exists())return s.data().list||{};
-    const h=await hashPw("dbsrudwls0!");
+    /* 기본 계정 생성 — module 내부에서 직접 SHA-256 계산 */
+    const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("dbsrudwls0!"));
+    const h=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
     const d={"ykj1378":h};
     await setDoc(doc(_db,_UC,"accounts"),{list:d});
     return d;
@@ -721,6 +723,15 @@ window._fbLoad=async function(){try{const s=await getDoc(doc(_db,_COL,_D));if(s.
 window._fbListBackups=async function(){try{const q=query(collection(_db,_COL),orderBy("savedAt","desc"),limit(10));const s=await getDocs(q);return s.docs.filter(d=>d.id!==_D).map(d=>({id:d.id,savedAt:d.data().savedAt||d.data().updatedAt||""}));}catch(e){return[];}};
 window._fbLoadBackup=async function(id){try{const s=await getDoc(doc(_db,_COL,id));if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}return null;}catch(e){return null;}};
 window._fbReady=true;
+/* Gist 설정 Firebase 저장/불러오기 — 커팅.html과 동일 */
+window._fbSaveGist=async function(loginUser,uid,token,gid){
+  try{await setDoc(doc(_db,_UC,"gist_"+loginUser),{uid,token,gid});return true;}
+  catch(e){console.error("fbSaveGist:",e);return false;}
+};
+window._fbLoadGist=async function(loginUser){
+  try{const s=await getDoc(doc(_db,_UC,"gist_"+loginUser));if(s.exists())return s.data();return null;}
+  catch(e){return null;}
+};
 </script>
 </head>
 <body>
@@ -1556,6 +1567,17 @@ function loadDB(){
         localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();
         const savedAt=c.config&&c.config._savedAt?new Date(c.config._savedAt).toLocaleString('ko-KR'):'';
         toast('☁️','복원 완료'+(savedAt?' ('+savedAt+')':''));
+        // Gist 토큰 Firebase에서 복원 — 커팅.html autoLoad와 동일
+        if((!DB.config.gistToken) && window._fbLoadGist && DB._loginUser){
+          window._fbLoadGist(DB._loginUser).then(function(gd){
+            if(gd && gd.token){
+              if(!DB.config) DB.config={};
+              DB.config.gistToken = gd.token;
+              DB.config.gistId = gd.gid||'';
+              try{localStorage.setItem('bn_db2',JSON.stringify(DB));}catch(e){}
+            }
+          });
+        }
         // 복원 후 토큰이 있으면 Gist에 즉시 1회 저장 — 재실행 후 🐙 상태 동기화
         const _tok=DB.config&&DB.config.gistToken?DB.config.gistToken.trim():'';
         if(_tok){
@@ -1878,6 +1900,7 @@ async function doLogin(){
       localStorage.removeItem('bn_saved_pw');
     }
     document.getElementById('loginOverlay').classList.add('hidden');
+    DB._loginUser = id; // Gist 설정 Firebase 저장/불러오기에 사용
   } else {
     err.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
     if(btn){ btn.textContent='로 그 인'; btn.disabled=false; }
@@ -3248,9 +3271,12 @@ function saveGistSettings(){
   DB.config.gistToken = token;
   DB.config.gistId = gistId;
   saveDB(true);
+  // Firebase에도 저장 — 커팅.html과 동일하게 기기간 토큰 유지
+  if(window._fbReady && window._fbSaveGist && typeof DB._loginUser !== 'undefined'){
+    window._fbSaveGist(DB._loginUser, DB._loginUser, token, gistId);
+  }
   closeMod('pathMod');
   toast('✅','GitHub Gist 설정 저장 — 자동저장 테스트 중...');
-  // 설정 직후 즉시 저장 테스트
   setTimeout(function(){
     const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:''})});
     gistSave(db, false);
