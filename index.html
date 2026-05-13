@@ -691,7 +691,23 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import{getFirestore,doc,setDoc,getDoc,collection,getDocs,orderBy,query,limit}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 const _a=initializeApp({apiKey:"AIzaSyARK0Ku1EZDgzPV1F0JZKWmQ0jMDfBysqM",authDomain:"bitna-17ed3.firebaseapp.com",projectId:"bitna-17ed3",storageBucket:"bitna-17ed3.firebasestorage.app",messagingSenderId:"798709646035",appId:"1:798709646035:web:9c2f3da3839e64e0894a26"});
-const _db=getFirestore(_a),_D="bn_worklog_main",_COL="bn_data";
+const _db=getFirestore(_a),_D="bn_worklog_main",_COL="bn_data",_UC="bn_users";
+/* 계정 불러오기 */
+window._fbGetUsers=async function(){
+  try{
+    const s=await getDoc(doc(_db,_UC,"accounts"));
+    if(s.exists())return s.data().list||{};
+    const h=await hashPw("dbsrudwls0!");
+    const d={"ykj1378":h};
+    await setDoc(doc(_db,_UC,"accounts"),{list:d});
+    return d;
+  }catch(e){console.error("fbGetUsers:",e);return{};}
+};
+/* 계정 저장 */
+window._fbSaveUsers=async function(u){
+  try{await setDoc(doc(_db,_UC,"accounts"),{list:u});return true;}
+  catch(e){console.error("fbSaveUsers:",e);return false;}
+};
 window._fbSave=async function(o){
   try{
     const t=new Date().toISOString();
@@ -731,7 +747,7 @@ window._fbReady=true;
       <input type="checkbox" id="savePwChk" style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;">
       <label for="savePwChk" style="font-size:12px;color:var(--muted);cursor:pointer;user-select:none;">비밀번호 저장</label>
     </div>
-    <div class="login-btnwrap"><button class="login-btn" onclick="doLogin()" ontouchend="event.preventDefault();doLogin()">로 그 인</button></div>
+    <div class="login-btnwrap"><button class="login-btn" id="loginBtn" onclick="doLogin()" ontouchend="event.preventDefault();doLogin()">로 그 인</button></div>
     <div class="login-err" id="lerr"></div>
   </div>
 </div>
@@ -1811,14 +1827,43 @@ async function doLogin(){
   const id  = document.getElementById('lid').value.trim();
   const pw  = document.getElementById('lpw').value.trim();
   const err = document.getElementById('lerr');
+  const btn = document.getElementById('loginBtn');
   if(!id || !pw){ err.textContent='아이디와 비밀번호를 입력하세요.'; return; }
-  if(!DB.accounts || DB.accounts.length === 0){
-    DB.accounts = [{id:'ykj1378', pw: await hashPw('dbsrudwls0!')}];
-    saveDB(true);
+  if(btn){ btn.textContent='확인 중...'; btn.disabled=true; }
+  // Firebase 준비 대기 (최대 10초) — 커팅.html과 동일한 구조
+  let w=0;
+  while(!window._fbReady && w<100){
+    if(w===20 && btn) btn.textContent='저장소 연결 중...';
+    await new Promise(r=>setTimeout(r,100));
+    w++;
   }
-  const hashed = await hashPw(pw);
-  const match = DB.accounts.find(a => a.id === id && a.pw === hashed);
-  if(match){
+  if(!window._fbReady){
+    err.textContent='저장소 연결 실패. 인터넷 연결을 확인 후 새로고침 하세요.';
+    if(btn){ btn.textContent='로 그 인'; btn.disabled=false; }
+    return;
+  }
+  // Firebase에서 계정 불러와 확인 — 커팅.html과 동일한 구조
+  const users = await window._fbGetUsers();
+  if(!Object.keys(users).length){
+    err.textContent='계정 정보를 불러올 수 없습니다. 새로고침 후 시도하세요.';
+    if(btn){ btn.textContent='로 그 인'; btn.disabled=false; }
+    return;
+  }
+  const pwHash = await hashPw(pw);
+  let matched = false;
+  if(users[id]){
+    const stored = users[id];
+    if(stored.length === 64){
+      matched = stored === pwHash;
+    } else {
+      if(stored === pw){
+        matched = true;
+        users[id] = pwHash;
+        window._fbSaveUsers(users);
+      }
+    }
+  }
+  if(matched){
     err.textContent = '';
     const saveChk = document.getElementById('saveIdChk');
     if(saveChk && saveChk.checked){
@@ -1835,6 +1880,7 @@ async function doLogin(){
     document.getElementById('loginOverlay').classList.add('hidden');
   } else {
     err.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+    if(btn){ btn.textContent='로 그 인'; btn.disabled=false; }
   }
 }
 
