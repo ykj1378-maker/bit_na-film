@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'bn-diary-v2';
+const CACHE_NAME = 'bn-diary-v3';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -37,6 +37,10 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   // POST 등 비GET 요청은 무시
   if (event.request.method !== 'GET') return;
+
+  // Firebase/Gist 요청은 SW 제외 — 커팅sw.js와 동일
+  const url = event.request.url;
+  if (url.includes('firebase') || url.includes('firestore') || url.includes('github.com')) return;
 
   event.respondWith(
     fetch(event.request).then(function(response) {
