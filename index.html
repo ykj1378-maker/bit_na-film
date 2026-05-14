@@ -1607,14 +1607,14 @@ function loadDB(){
         localStorage.setItem('bn_db2',JSON.stringify(DB));loadTodayRows();calcSummary();
         const savedAt=c.config&&c.config._savedAt?new Date(c.config._savedAt).toLocaleString('ko-KR'):'';
         toast('☁️','복원 완료'+(savedAt?' ('+savedAt+')':''));
-        // 복원 후 토큰이 있으면 Gist에 즉시 1회 저장 — 재실행 후 🐙 상태 동기화
-        const _tok=DB.config&&DB.config.gistToken?DB.config.gistToken.trim():'';
-        if(_tok){
-          setTimeout(function(){
-            const db=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
-            gistSave(db,true);
-          },1500);
-        }
+      }
+      // 토큰이 있으면 항상 Gist 상태 동기화 — Firebase 복원 여부와 무관하게 🐙 상태 업데이트
+      const _tok=DB.config&&DB.config.gistToken?DB.config.gistToken.trim():'';
+      if(_tok){
+        setTimeout(function(){
+          const db=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
+          gistSave(db,true);
+        },1500);
       }
     }).catch(function(){});
   }
@@ -1706,6 +1706,7 @@ function _setGistStatus3(state,time){
   if(state==='saving')el.textContent='🐙 저장 중...';
   else if(state==='ok')el.textContent='🐙 '+time;
   else if(state==='err')el.textContent='🐙 ❌';
+  else el.textContent='🐙 —';
 }
 function saveDB(quiet=false){
   if(!DB.config)DB.config={};
@@ -1772,8 +1773,10 @@ async function restoreBackup(id){
 
 // ── GitHub Gist 저장 (PATCH: 기존 Gist 수정 / POST: 새 Gist 생성) ──
 async function gistSave(db, quiet){
+  // 토큰/ID는 항상 전역 DB에서 읽음 (파라미터 db는 업로드 payload 전용 — 토큰 제거된 사본)
   const token = DB.config && DB.config.gistToken ? DB.config.gistToken.trim() : '';
-  if(!token) return;
+  const gistId = DB.config && DB.config.gistId ? DB.config.gistId.trim() : '';
+  if(!token){ _setGistStatus3('—'); return; }
   // Gist 업로드 payload: gistToken/gistId 제외 (보안 + 순환 덮어쓰기 방지)
   const safeDb = Object.assign({}, db, {config: Object.assign({}, db.config||{}, {gistToken:'', gistId:''})});
   _setGistStatus3('saving');
@@ -1781,7 +1784,6 @@ async function gistSave(db, quiet){
   const body = { files:{ 'bn_data.json':{ content: payload } } };
   try{
     let res;
-    const gistId = DB.config.gistId ? DB.config.gistId.trim() : '';
     if(gistId){
       res = await fetch('https://api.github.com/gists/'+gistId, {
         method:'PATCH',
