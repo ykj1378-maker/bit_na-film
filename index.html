@@ -690,20 +690,83 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import{getFirestore,doc,setDoc,getDoc,collection,getDocs,orderBy,query,limit}from"https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+/*
+ * ⚠️ Firebase 설정 안내
+ * API 키는 Firebase 클라이언트 SDK 특성상 브라우저에 노출됩니다.
+ * Firebase Console → Firestore → Rules 에서 아래 규칙을 반드시 설정하세요:
+ *
+ * rules_version = '2';
+ * service cloud.firestore {
+ *   match /databases/{database}/documents {
+ *     match /{col}/{doc} {
+ *       allow read, write: if col.matches("bn_data_.+");
+ *     }
+ *     match /{other=**} {
+ *       allow read, write: if false;
+ *     }
+ *   }
+ * }
+ */
 const _a=initializeApp({apiKey:"AIzaSyARK0Ku1EZDgzPV1F0JZKWmQ0jMDfBysqM",authDomain:"bitna-17ed3.firebaseapp.com",projectId:"bitna-17ed3",storageBucket:"bitna-17ed3.firebasestorage.app",messagingSenderId:"798709646035",appId:"1:798709646035:web:dd06dd5b66a339cd894a26"});
-const _db=getFirestore(_a),_D="bn_worklog_main",_COL="bn_data";
-window._fbSave=async function(o){
+const _db=getFirestore(_a);
+
+/* ── 사용자별 컬렉션 경로 헬퍼 ──────────────────────────────────────
+   컬렉션: bn_data_{userId}  문서(최신): bn_latest_{userId}
+   사용자 A의 저장이 사용자 B의 데이터를 덮어쓰는 문제 해결 */
+function _col(uid){ return "bn_data_"+(uid||"_anon"); }
+function _latestId(uid){ return "bn_latest_"+(uid||"_anon"); }
+
+/* ── 저장: 사용자별 독립 컬렉션 + 독립 문서명 ───────────────────── */
+window._fbSave=async function(o, uid){
   try{
-    const t=new Date().toISOString();
-    const p=JSON.stringify(o);
-    await setDoc(doc(_db,_COL,_D),{payload:p,updatedAt:t});
-    await setDoc(doc(_db,_COL,"bk_"+t.replace(/[:.]/g,"-")),{payload:p,savedAt:t});
+    const user = uid || (window._currentUser) || "_anon";
+    const COL  = _col(user);
+    const t    = new Date().toISOString();
+    const p    = JSON.stringify(o);
+    /* 최신본: bn_latest_{user} */
+    await setDoc(doc(_db,COL,_latestId(user)),{payload:p,updatedAt:t,savedBy:user});
+    /* 백업본 */
+    await setDoc(doc(_db,COL,"bk_"+t.replace(/[:.]/g,"-")),{payload:p,savedAt:t,savedBy:user});
     return true;
-  }catch(e){return false;}
+  }catch(e){console.error("fbSave:",e);return false;}
 };
-window._fbLoad=async function(){try{const s=await getDoc(doc(_db,_COL,_D));if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}return null;}catch(e){return null;}};
-window._fbListBackups=async function(){try{const q=query(collection(_db,_COL),orderBy("savedAt","desc"),limit(10));const s=await getDocs(q);return s.docs.filter(d=>d.id!==_D).map(d=>({id:d.id,savedAt:d.data().savedAt||d.data().updatedAt||""}));}catch(e){return[];}};
-window._fbLoadBackup=async function(id){try{const s=await getDoc(doc(_db,_COL,id));if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}return null;}catch(e){return null;}};
+
+/* ── 불러오기: 신규 키 → 구버전 "bn_worklog_main" 폴백(하위 호환) ── */
+window._fbLoad=async function(uid){
+  try{
+    const user = uid || (window._currentUser) || "_anon";
+    const COL  = _col(user);
+    /* 신규 키 시도 */
+    let s = await getDoc(doc(_db,COL,_latestId(user)));
+    /* 폴백: 기존 단일 문서 (마이그레이션용) */
+    if(!s.exists()) s = await getDoc(doc(_db,"bn_data","bn_worklog_main"));
+    if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}
+    return null;
+  }catch(e){return null;}
+};
+
+window._fbListBackups=async function(uid){
+  try{
+    const user = uid || (window._currentUser) || "_anon";
+    const COL  = _col(user);
+    const latId = _latestId(user);
+    const q=query(collection(_db,COL),orderBy("savedAt","desc"),limit(10));
+    const s=await getDocs(q);
+    return s.docs
+      .filter(d=>d.id!==latId && !d.id.startsWith("bn_latest_"))
+      .map(d=>({id:d.id,savedAt:d.data().savedAt||d.data().updatedAt||""}));
+  }catch(e){return[];}
+};
+
+window._fbLoadBackup=async function(id, uid){
+  try{
+    const user = uid || (window._currentUser) || "_anon";
+    const s=await getDoc(doc(_db,_col(user),id));
+    if(s.exists()){const r=s.data().payload;return r?JSON.parse(r):null;}
+    return null;
+  }catch(e){return null;}
+};
+
 window._fbReady=true;
 </script>
 </head>
@@ -1521,7 +1584,7 @@ function loadDB(){
   }catch(e){}
   function _sync(){
     if(!window._fbReady||!window._fbLoad)return;
-    window._fbLoad().then(function(c){
+    window._fbLoad(window._currentUser).then(function(c){
       if(!c)return;
       // Firebase 연결 확인 — 조건 무관하게 상태표시 업데이트
       const now=new Date();
@@ -1657,7 +1720,7 @@ function saveDB(quiet=false){
   const db=Object.assign({},DB,{config:Object.assign({},DB.config,{savePath:'',savePath2:'',savePath3:'',gistToken:'',gistId:''})});
   if(window._fbReady&&window._fbSave){
     _setFbStatus2('saving');
-    window._fbSave(db).then(function(ok){
+    window._fbSave(db, window._currentUser).then(function(ok){
       if(ok){const now=new Date();_setFbStatus2('ok',now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'));}
       else _setFbStatus2('err');
       if(!quiet)toast(ok?'☁️':'⚠️',ok?'클라우드 저장 완료 ✓':'클라우드 저장 실패');
@@ -1675,7 +1738,7 @@ function saveDB(quiet=false){
 // ── 백업 목록 열기 / 복원 ──
 async function openBackupList(){
   if(!window._fbReady||!window._fbListBackups){toast('⚠️','Firebase 연결 중...');return;}
-  const list=await window._fbListBackups();
+  const list=await window._fbListBackups(window._currentUser);
   const el=document.getElementById('bkList2');
   if(!list||!list.length){
     el.innerHTML='<p style="font-size:12px;color:#868E96;text-align:center;padding:20px 0">저장된 백업이 없습니다.</p>';
@@ -1692,7 +1755,7 @@ async function openBackupList(){
 }
 async function restoreBackup(id){
   if(!confirm('이 백업으로 복원할까요? 현재 내용이 교체됩니다.'))return;
-  const data=await window._fbLoadBackup(id);
+  const data=await window._fbLoadBackup(id, window._currentUser);
   if(!data){toast('❌','복원 실패');return;}
   try{
     const localToken=DB.config&&DB.config.gistToken||'';
@@ -1800,11 +1863,23 @@ async function hashPw(pw){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
+/* 로그인 실패 횟수 제한 (브루트포스 방어) */
+const _loginFail = {count:0, lockedUntil:0};
+const _LOGIN_MAX = 5, _LOGIN_LOCK_MS = 60000;
+
 async function doLogin(){
   const id  = document.getElementById('lid').value.trim();
   const pw  = document.getElementById('lpw').value.trim();
   const err = document.getElementById('lerr');
   if(!id || !pw){ err.textContent='아이디와 비밀번호를 입력하세요.'; return; }
+
+  /* 잠금 상태 확인 */
+  if(_loginFail.lockedUntil > Date.now()){
+    const sec = Math.ceil((_loginFail.lockedUntil - Date.now()) / 1000);
+    err.textContent = `로그인 시도가 너무 많습니다. ${sec}초 후 다시 시도하세요.`;
+    return;
+  }
+
   if(!DB.accounts || DB.accounts.length === 0){
     DB.accounts = [{id:'ykj1378', pw: await hashPw('dbsrudwls0!')}];
     saveDB(true);
@@ -1813,6 +1888,10 @@ async function doLogin(){
   const match = DB.accounts.find(a => a.id === id && a.pw === hashed);
   if(match){
     err.textContent = '';
+    /* 로그인 성공 — 실패 카운터 초기화 */
+    _loginFail.count = 0; _loginFail.lockedUntil = 0;
+    /* 현재 로그인 사용자 기록 (Firebase 저장 경로 분리용) */
+    window._currentUser = id;
     const saveChk = document.getElementById('saveIdChk');
     if(saveChk && saveChk.checked){
       localStorage.setItem('bn_saved_id', id);
@@ -1821,13 +1900,23 @@ async function doLogin(){
     }
     const savePwChk = document.getElementById('savePwChk');
     if(savePwChk && savePwChk.checked){
-      localStorage.setItem('bn_saved_pw', id + '|' + pw);
+      /* 비밀번호는 해시값으로만 저장 (평문 저장 제거) */
+      localStorage.setItem('bn_saved_pw_hash', id + '|' + hashed);
+      localStorage.removeItem('bn_saved_pw'); // 구버전 평문 키 삭제
     } else {
+      localStorage.removeItem('bn_saved_pw_hash');
       localStorage.removeItem('bn_saved_pw');
     }
     document.getElementById('loginOverlay').classList.add('hidden');
   } else {
-    err.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+    /* 로그인 실패 — 카운터 증가 */
+    _loginFail.count++;
+    if(_loginFail.count >= _LOGIN_MAX){
+      _loginFail.lockedUntil = Date.now() + _LOGIN_LOCK_MS;
+      err.textContent = `로그인 ${_LOGIN_MAX}회 실패. 1분간 잠깁니다.`;
+    } else {
+      err.textContent = `아이디 또는 비밀번호가 올바르지 않습니다. (${_loginFail.count}/${_LOGIN_MAX})`;
+    }
   }
 }
 
@@ -1855,18 +1944,19 @@ function checkLogin(){
     });
   }
   // 비밀번호 저장 확인 (저장된 경우 입력 필드에 자동 입력)
-  const savedPw = localStorage.getItem('bn_saved_pw');
-  if(savedPw){
-    const parts = savedPw.split('|');
+  // 신규 키(해시 저장) 우선, 구버전 평문 키는 삭제
+  const savedPwHash = localStorage.getItem('bn_saved_pw_hash');
+  const savedPwLegacy = localStorage.getItem('bn_saved_pw');
+  if(savedPwLegacy){ localStorage.removeItem('bn_saved_pw'); } // 구버전 평문 삭제
+  if(savedPwHash){
+    const parts = savedPwHash.split('|');
     if(parts.length >= 2){
       const sid = parts[0];
-      const spw = parts.slice(1).join('|');
+      /* 비밀번호 해시는 입력 필드에 표시하지 않음 — ID만 복원, 비밀번호 직접 입력 요구 */
       const lidEl = document.getElementById('lid');
-      const pwEl  = document.getElementById('lpw');
       const savePwChk = document.getElementById('savePwChk');
       const saveIdChk = document.getElementById('saveIdChk');
       if(lidEl) lidEl.value = sid;
-      if(pwEl)  pwEl.value  = spw;
       if(savePwChk) savePwChk.checked = true;
       if(saveIdChk) saveIdChk.checked = true;
     }
@@ -1882,24 +1972,21 @@ function checkLogin(){
 }
 
 function logout(){
+  /* 현재 사용자 정보 클리어 */
+  window._currentUser = null;
   document.getElementById('loginOverlay').classList.remove('hidden');
   const savedId = localStorage.getItem('bn_saved_id');
-  const savedPw = localStorage.getItem('bn_saved_pw');
   const lidEl = document.getElementById('lid');
   const pwEl  = document.getElementById('lpw');
   const saveIdChk = document.getElementById('saveIdChk');
   const savePwChk = document.getElementById('savePwChk');
   if(savedId && lidEl) lidEl.value = savedId;
   else if(lidEl) lidEl.value = '';
-  if(savedPw){
-    const parts = savedPw.split('|');
-    if(pwEl && parts.length >= 2) pwEl.value = parts.slice(1).join('|');
-    if(savePwChk) savePwChk.checked = true;
-  } else {
-    if(pwEl) pwEl.value = '';
-    if(savePwChk) savePwChk.checked = false;
-  }
+  /* 보안: 비밀번호 입력 필드는 항상 비움 (해시만 저장하므로 복원 불가) */
+  if(pwEl) pwEl.value = '';
   if(saveIdChk) saveIdChk.checked = !!savedId;
+  const savedPwHash = localStorage.getItem('bn_saved_pw_hash');
+  if(savePwChk) savePwChk.checked = !!savedPwHash;
   document.getElementById('lerr').textContent = '';
 }
 
@@ -3078,7 +3165,7 @@ function syncAccounts(){
   }
   if(window._fbReady&&window._fbSave){
     const fbSnap=Object.assign({},DB,{config:Object.assign({},DB.config||{},{savePath:'',savePath2:'',savePath3:''})});
-    window._fbSave(fbSnap).catch(function(){});
+    window._fbSave(fbSnap, window._currentUser).catch(function(){});
   }
   saveDB(true);
 }
